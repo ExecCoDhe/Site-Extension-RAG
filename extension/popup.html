@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Hybrid RAG</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main>
+      <header>
+        <p class="eyebrow">Local Hybrid RAG</p>
+        <h1>Ask this site</h1>
+      </header>
+
+      <section class="panel">
+        <div class="row">
+          <span class="label">Current tab</span>
+          <span id="current-host" class="value">Loading...</span>
+        </div>
+        <div class="row">
+          <span class="label">Workspace</span>
+          <span id="indexed-host" class="value">None</span>
+        </div>
+        <div class="row">
+          <span class="label">Pages</span>
+          <span id="page-count" class="value">0</span>
+        </div>
+        <div class="row">
+          <span class="label">Chunks</span>
+          <span id="chunk-count" class="value">0</span>
+        </div>
+        <div class="row">
+          <span class="label">Status</span>
+          <span id="status" class="status">Idle</span>
+        </div>
+        <div class="row">
+          <span class="label">Last sync</span>
+          <span id="last-sync" class="value">Never</span>
+        </div>
+        <div class="row">
+          <span class="label">Run stats</span>
+          <span id="sync-stats" class="value">None</span>
+        </div>
+      </section>
+
+      <p id="message" class="message" role="status"></p>
+
+      <section id="host-warning" class="warning hidden">
+        <p>This answer will use the indexed site, not the currently active tab.</p>
+        <label>
+          <input id="ack-host-warning" type="checkbox">
+          Ask about the indexed site anyway
+        </label>
+      </section>
+
+      <button id="start-button" type="button">Ingest / re-sync workspace</button>
+
+      <form id="chat-form">
+        <label for="question">Question</label>
+        <textarea id="question" rows="3" placeholder="Ask about the indexed site"></textarea>
+        <button id="submit-button" type="submit">Ask</button>
+      </form>
+
+      <section class="answer-panel">
+        <h2>Answer</h2>
+        <p id="answer">No answer yet.</p>
+        <h2>Evidence</h2>
+        <ul id="citations"></ul>
+      </section>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

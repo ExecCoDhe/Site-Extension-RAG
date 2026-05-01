@@ -1,0 +1,13 @@
+.cursor
+docs
+.env
+.venv/
+backend/venv
+backend/.venv
+backend/.local/
+__pycache__/
+*.py[cod]
+*.egg-info/
+backend/.env
+backend/README.md
+README.md

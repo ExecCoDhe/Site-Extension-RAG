@@ -1,0 +1,157 @@
+:root {
+  color-scheme: light;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+}
+
+body {
+  margin: 0;
+  width: 360px;
+  background: #f8fafc;
+  color: #172033;
+}
+
+main {
+  padding: 16px;
+}
+
+h1,
+h2,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  font-size: 22px;
+  margin-bottom: 12px;
+}
+
+h2 {
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.eyebrow {
+  color: #52627a;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.panel,
+.answer-panel,
+.warning {
+  background: #ffffff;
+  border: 1px solid #d8e0ec;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  padding: 12px;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.label {
+  color: #52627a;
+}
+
+.value,
+.status {
+  font-weight: 600;
+  max-width: 190px;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.message {
+  color: #334155;
+  min-height: 20px;
+}
+
+.warning {
+  border-color: #f59e0b;
+  color: #7c2d12;
+}
+
+.hidden {
+  display: none;
+}
+
+button,
+textarea {
+  box-sizing: border-box;
+  width: 100%;
+}
+
+button {
+  background: #2563eb;
+  border: 0;
+  border-radius: 8px;
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: 700;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+}
+
+button:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+textarea {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font: inherit;
+  margin-bottom: 8px;
+  padding: 8px;
+  resize: vertical;
+}
+
+textarea:disabled {
+  background: #e2e8f0;
+}
+
+#citations {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+#citations li {
+  border-top: 1px solid #e2e8f0;
+  padding: 8px 0;
+}
+
+#citations a {
+  color: #1d4ed8;
+  overflow-wrap: anywhere;
+}
+
+#citations blockquote {
+  border-left: 3px solid #cbd5e1;
+  color: #334155;
+  margin: 6px 0 0;
+  padding-left: 8px;
+}
+
+#citations details {
+  margin-top: 6px;
+}
+
+#citations summary {
+  color: #475569;
+  cursor: pointer;
+  font-weight: 700;
+}

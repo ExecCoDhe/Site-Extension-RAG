@@ -1,0 +1,28 @@
+[project]
+name = "proj1-backend"
+version = "0.1.0"
+description = "Local FastAPI backend for the hybrid RAG Chrome extension."
+requires-python = ">=3.11"
+dependencies = [
+    "beautifulsoup4",
+    "faiss-cpu",
+    "fastapi[standard]",
+    "google-genai",
+    "httpx",
+    "lxml",
+    "lxml_html_clean",
+    "numpy",
+    "pydantic-settings",
+    "python-dotenv",
+    "qdrant-client",
+    "trafilatura",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
