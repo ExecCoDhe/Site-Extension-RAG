@@ -74,7 +74,7 @@ def test_google_embedding_client_batches_document_embeddings(monkeypatch) -> Non
             return FakeResponse(len(contents))
 
     class FakeClient:
-        def __init__(self, *, api_key) -> None:
+        def __init__(self, *, api_key, **kwargs) -> None:
             self.models = FakeModels()
 
     monkeypatch.setattr("app.index.embeddings.genai.Client", FakeClient)

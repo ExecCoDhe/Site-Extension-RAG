@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from app.chunking import build_hierarchical_chunks
 from app.config import Settings
 from app.jobs.models import PageRecord
@@ -19,16 +21,19 @@ def build_workspace_records(
         token_budget=settings.child_chunk_token_budget,
         token_overlap=settings.child_chunk_token_overlap,
     )
+
+    # Build a URL → page_id index from chunks to avoid O(pages × sections × chunks)
+    url_to_page_id: dict[str, str] = {}
+    chunk_page_ids: set[str] = {chunk.page_id for chunk in chunks}
+    for section in sections:
+        if section.page_id in chunk_page_ids:
+            for chunk in chunks:
+                if chunk.page_id == section.page_id and chunk.url not in url_to_page_id:
+                    url_to_page_id[chunk.url] = section.page_id
+
     page_records = []
     for page in pages:
-        page_id = next(
-            (
-                section.page_id
-                for section in sections
-                if any(chunk.page_id == section.page_id and chunk.url == page.url for chunk in chunks)
-            ),
-            None,
-        )
+        page_id = url_to_page_id.get(page.url)
         if page_id is None:
             continue
         page_records.append(

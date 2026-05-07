@@ -163,7 +163,11 @@ def _sitemap_candidates(url: str) -> list[str]:
 
 def _is_sitemap(url: str, content_type: str) -> bool:
     lowered_type = content_type.lower()
-    return url.endswith(".xml") or "xml" in lowered_type
+    lowered_url = url.lower()
+    # Require path to look like a sitemap, not just any .xml file
+    is_sitemap_url = "sitemap" in lowered_url and lowered_url.endswith(".xml")
+    is_xml_content = "xml" in lowered_type
+    return is_sitemap_url and is_xml_content
 
 
 def _parse_sitemap_links(xml_text: str) -> list[str]:

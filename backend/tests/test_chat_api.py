@@ -12,7 +12,7 @@ from app.workspace.models import (
 
 
 class FakeEmbeddingClient:
-    def __init__(self, *, api_key=None, model="fake") -> None:
+    def __init__(self, *, api_key=None, model="fake", **kwargs) -> None:
         pass
 
     def embed_query(self, text: str) -> list[float]:
@@ -23,7 +23,7 @@ class FakeEmbeddingClient:
 
 
 class FakeGenerationClient:
-    def __init__(self, *, api_key=None, model="fake") -> None:
+    def __init__(self, *, api_key=None, model="fake", **kwargs) -> None:
         pass
 
     def generate_answer(self, *, question, hits):

@@ -1,13 +1,67 @@
-.cursor
-docs
+# ===== Environment & Secrets =====
 .env
-.venv/
-backend/venv
-backend/.venv
-backend/.local/
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+# ===== Python =====
 __pycache__/
 *.py[cod]
+*.pyo
 *.egg-info/
-backend/.env
-backend/README.md
+*.egg
+dist/
+build/
+.eggs/
+
+# ===== Virtual Environments =====
+.venv/
+venv/
+backend/.venv/
+backend/venv/
+
+# ===== Local Data & State =====
+backend/.local/
+*.sqlite3
+*.sqlite3-journal
+
+# ===== Qdrant Local Store =====
+qdrant_data/
+
+# ===== Testing & Coverage =====
+.pytest_cache/
+backend/.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# ===== IDE & Editors =====
+.cursor/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ===== OS Files =====
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===== Docker =====
+docker-compose.override.yml
+
+# ===== GCP Deployment Artifacts =====
+db_url.txt
+api_key.txt
+*.key
+*.pem
+
+
 README.md
+extension/README.md
+backend/README.md
+docs/README.md
+gcp-full-implementation-guide.md

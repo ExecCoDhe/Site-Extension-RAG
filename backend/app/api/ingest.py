@@ -101,6 +101,7 @@ async def _run_ingest_job(job_id: str, url: str) -> None:
             allow_registrable_domain=True,
         )
     except Exception:
+        logger.exception("Crawl failed for %s", url)
         workspace_store.fail_run(
             job_id,
             code="NO_PAGES_INDEXED",
@@ -155,6 +156,7 @@ async def _run_ingest_job(job_id: str, url: str) -> None:
             child_embeddings = GoogleEmbeddingClient(
                 api_key=settings.gemini_api_key,
                 model=settings.gemini_embedding_model,
+                timeout_seconds=settings.gemini_request_timeout_seconds,
             ).embed_documents([chunk.text for chunk in child_chunks])
         except MissingGoogleConfiguration as error:
             workspace_store.fail_run(

@@ -1,6 +1,7 @@
 import json
 from typing import Protocol
 
+import httpx
 from google import genai
 from pydantic import BaseModel
 
@@ -36,13 +37,19 @@ class EvidenceGenerationClient(Protocol):
         pass
 
 
+DEFAULT_TIMEOUT_SECONDS = 60
+
+
 class GoogleGenerationClient:
-    def __init__(self, *, api_key: str | None, model: str) -> None:
+    def __init__(self, *, api_key: str | None, model: str, timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS) -> None:
         if not api_key:
             raise MissingGoogleConfiguration("GEMINI_API_KEY is not configured.")
 
         self._model = model
-        self._client = genai.Client(api_key=api_key)
+        self._client = genai.Client(
+            api_key=api_key,
+            http_options={"timeout": timeout_seconds * 1000},
+        )
 
     def generate_answer(self, *, question: str, hits: list[SearchHit]) -> GeneratedAnswer:
         try:

@@ -42,10 +42,12 @@ def chat(request: ChatRequest) -> dict[str, object]:
             embedding_client=GoogleEmbeddingClient(
                 api_key=settings.gemini_api_key,
                 model=settings.gemini_embedding_model,
+                timeout_seconds=settings.gemini_request_timeout_seconds,
             ),
             generation_client=GoogleGenerationClient(
                 api_key=settings.gemini_api_key,
                 model=settings.gemini_chat_model,
+                timeout_seconds=settings.gemini_request_timeout_seconds,
             ),
             session_memory=workspace_store.session_memory(request.session_id),
         )

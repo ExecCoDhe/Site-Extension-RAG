@@ -15,7 +15,7 @@ class FakeEmbeddingClient:
     embedded_texts: list[str] = []
     calls: list[list[str]] = []
 
-    def __init__(self, *, api_key=None, model="fake") -> None:
+    def __init__(self, *, api_key=None, model="fake", **kwargs) -> None:
         pass
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:

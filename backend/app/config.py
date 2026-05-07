@@ -48,6 +48,7 @@ class Settings(BaseSettings):
     child_chunk_token_budget: int = 220
     child_chunk_token_overlap: int = 40
     chunking_version: str = "dom-heading-token-v2"
+    gemini_request_timeout_seconds: int = 60
 
 
 @lru_cache

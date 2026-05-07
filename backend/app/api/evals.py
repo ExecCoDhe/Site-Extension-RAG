@@ -33,6 +33,7 @@ def retrieval_eval(request: EvalRequest) -> dict[str, object]:
             embedding_client=GoogleEmbeddingClient(
                 api_key=settings.gemini_api_key,
                 model=settings.gemini_embedding_model,
+                timeout_seconds=settings.gemini_request_timeout_seconds,
             ),
             chunks=workspace_store.active_chunks(),
             embeddings=workspace_store.embeddings(settings.gemini_embedding_model),

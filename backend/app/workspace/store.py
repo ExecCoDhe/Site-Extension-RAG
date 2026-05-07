@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from uuid import uuid4
 
 from app.api.errors import ErrorCode
-from app.db import get_connection, initialize_database
+from app.db import get_connection, initialize_database, validate_table_name
 from app.workspace.models import (
     AcquisitionMethod,
     ChildChunkRecord,
@@ -25,10 +25,28 @@ def utc_now() -> str:
 class WorkspaceStore:
     def __init__(self, workspace_id: str = DEFAULT_WORKSPACE_ID) -> None:
         self.workspace_id = workspace_id
-        initialize_database()
-        self.ensure_workspace()
+        self._initialized = False
+        self._initializing = False
+
+    def _ensure_initialized(self) -> None:
+        """Lazily initialize database tables and default workspace row.
+
+        Uses an ``_initializing`` guard to prevent infinite recursion when
+        public methods (``ensure_workspace`` → ``get_workspace``) call back
+        into ``_ensure_initialized``.
+        """
+        if self._initialized or self._initializing:
+            return
+        self._initializing = True
+        try:
+            initialize_database()
+            self.ensure_workspace()
+            self._initialized = True
+        finally:
+            self._initializing = False
 
     def reset(self) -> None:
+        self._ensure_initialized()
         with get_connection() as connection:
             for table in [
                 "eval_run",
@@ -42,10 +60,13 @@ class WorkspaceStore:
                 "ingest_run",
                 "workspace",
             ]:
-                connection.execute(f"DELETE FROM {table}")
+                # validate_table_name guards against SQL injection even though
+                # the list above is hardcoded — defence in depth.
+                connection.execute(f"DELETE FROM {validate_table_name(table)}")
         self.ensure_workspace()
 
     def ensure_workspace(self) -> WorkspaceSummary:
+        self._ensure_initialized()
         existing = self.get_workspace()
         if existing is not None:
             return existing
@@ -65,6 +86,7 @@ class WorkspaceStore:
         return workspace
 
     def get_workspace(self) -> WorkspaceSummary | None:
+        self._ensure_initialized()
         with get_connection() as connection:
             row = connection.execute(
                 "SELECT * FROM workspace WHERE workspace_id = ?",
@@ -87,6 +109,7 @@ class WorkspaceStore:
         )
 
     def active_ingest_run(self) -> IngestRunSummary | None:
+        self._ensure_initialized()
         with get_connection() as connection:
             row = connection.execute(
                 """
@@ -101,6 +124,7 @@ class WorkspaceStore:
 
     def recover_interrupted_ingest_runs(self) -> int:
         """Mark ingest runs that could not survive a backend restart as retryable errors."""
+        self._ensure_initialized()
         now = utc_now()
         with get_connection() as connection:
             cursor = connection.execute(
@@ -145,6 +169,7 @@ class WorkspaceStore:
         chunking_version: str,
         embedding_version: str,
     ) -> IngestRunSummary | None:
+        self._ensure_initialized()
         if self.active_ingest_run() is not None:
             return None
 
@@ -191,6 +216,7 @@ class WorkspaceStore:
         return self.get_run(run_id)
 
     def get_run(self, run_id: str) -> IngestRunSummary | None:
+        self._ensure_initialized()
         normalized_run_id = self.normalize_run_id(run_id)
         with get_connection() as connection:
             row = connection.execute(
@@ -202,9 +228,13 @@ class WorkspaceStore:
     def normalize_run_id(self, run_id: str) -> str:
         if run_id.startswith(("run_", "job_")):
             return run_id.replace("job_", "run_", 1)
-        prefixed = f"run_{run_id}"
-        if self.get_run(prefixed) is not None:
-            return prefixed
+        with get_connection() as connection:
+            row = connection.execute(
+                "SELECT run_id FROM ingest_run WHERE run_id = ?",
+                (f"run_{run_id}",),
+            ).fetchone()
+        if row is not None:
+            return f"run_{run_id}"
         return run_id
 
     def replace_active_content(
@@ -220,6 +250,7 @@ class WorkspaceStore:
         skipped_count: int,
         retained_canonical_urls: list[str] | None = None,
     ) -> None:
+        self._ensure_initialized()
         now = utc_now()
         retained_canonical_urls = retained_canonical_urls or []
         with get_connection() as connection:
@@ -386,6 +417,7 @@ class WorkspaceStore:
             )
 
     def active_page_hashes(self) -> dict[str, str]:
+        self._ensure_initialized()
         with get_connection() as connection:
             rows = connection.execute(
                 """
@@ -404,6 +436,7 @@ class WorkspaceStore:
         code: ErrorCode,
         message: str,
     ) -> None:
+        self._ensure_initialized()
         now = utc_now()
         with get_connection() as connection:
             connection.execute(
@@ -424,6 +457,7 @@ class WorkspaceStore:
             )
 
     def active_chunks(self) -> list[ChildChunkRecord]:
+        self._ensure_initialized()
         with get_connection() as connection:
             rows = connection.execute(
                 """
@@ -436,6 +470,7 @@ class WorkspaceStore:
         return [_chunk_from_row(row) for row in rows]
 
     def embeddings(self, embedding_version: str) -> dict[str, list[float]]:
+        self._ensure_initialized()
         with get_connection() as connection:
             rows = connection.execute(
                 """
@@ -449,6 +484,7 @@ class WorkspaceStore:
     def session_memory(self, session_id: str | None) -> dict[str, object]:
         if not session_id:
             return {}
+        self._ensure_initialized()
         with get_connection() as connection:
             row = connection.execute(
                 "SELECT summary_json FROM session_memory WHERE session_id = ?",
@@ -466,6 +502,7 @@ class WorkspaceStore:
     ) -> None:
         if not session_id:
             return
+        self._ensure_initialized()
         topic = citations[0].get("title") if citations else None
         summary = {
             "last_question": question,
@@ -494,6 +531,7 @@ class WorkspaceStore:
         groundedness: str,
         latency_ms: int,
     ) -> str:
+        self._ensure_initialized()
         trace_id = f"trace_{uuid4().hex}"
         with get_connection() as connection:
             connection.execute(

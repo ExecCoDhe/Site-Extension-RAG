@@ -1,3 +1,4 @@
-from app.db.connection import get_connection, initialize_database
+from app.db.connection import close_pool, get_connection, initialize_database, validate_table_name
 
-__all__ = ["get_connection", "initialize_database"]
+__all__ = ["close_pool", "get_connection", "initialize_database", "validate_table_name"]
+

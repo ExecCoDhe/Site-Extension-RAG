@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://127.0.0.1:8000";
+const API_BASE_URL = "https://proj1-backend-957531394642.asia-south2.run.app";
 const STORAGE_KEY = "proj1Job";
 const POLL_INTERVAL_MS = 1500;
 

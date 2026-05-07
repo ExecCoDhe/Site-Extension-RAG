@@ -13,6 +13,8 @@ dependencies = [
     "lxml_html_clean",
     "numpy",
     "pydantic-settings",
+    "psycopg[binary]",
+    "psycopg-pool",
     "python-dotenv",
     "qdrant-client",
     "trafilatura",
