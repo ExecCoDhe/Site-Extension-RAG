@@ -63,5 +63,11 @@ api_key.txt
 README.md
 extension/README.md
 backend/README.md
-docs/README.md
 gcp-full-implementation-guide.md
+docs/
+todos/
+scripts/
+skills/
+plans/
+.agent/
+gemini.md

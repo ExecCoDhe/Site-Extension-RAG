@@ -1,3 +1,4 @@
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
@@ -23,6 +24,7 @@ async def lifespan(app: FastAPI):
     Shutdown: close the database connection pool cleanly.
     """
     settings = get_settings()
+    _configure_langsmith(settings)
     workspace_store.recover_interrupted_ingest_runs()
     yield
     close_pool()
@@ -57,3 +59,11 @@ def readiness() -> dict[str, str]:
         ) from error
 
     return {"status": "ok", "database": "ok"}
+
+
+def _configure_langsmith(settings) -> None:
+    """Push LangSmith config into the environment so @traceable works."""
+    if settings.langsmith_tracing and settings.langsmith_api_key:
+        os.environ.setdefault("LANGSMITH_TRACING", "true")
+        os.environ.setdefault("LANGSMITH_API_KEY", settings.langsmith_api_key)
+        os.environ.setdefault("LANGSMITH_PROJECT", settings.langsmith_project)

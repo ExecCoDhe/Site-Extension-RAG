@@ -13,6 +13,7 @@ class EvalCase(BaseModel):
     expected_urls: list[str] = Field(default_factory=list)
     should_decompose: bool = False
     expected_groundedness: str | None = None
+    expected_answer: str | None = None
 
 
 class EvalResult(BaseModel):

@@ -24,6 +24,11 @@ class Settings(BaseSettings):
         alias="GEMINI_EMBEDDING_MODEL",
     )
 
+    # LangSmith observability
+    langsmith_api_key: str | None = Field(default=None, alias="LANGSMITH_API_KEY")
+    langsmith_project: str = Field(default="site-extension-rag", alias="LANGSMITH_PROJECT")
+    langsmith_tracing: bool = Field(default=False, alias="LANGSMITH_TRACING")
+
     host: str = "127.0.0.1"
     port: int = 8000
     cors_allow_origins: list[str] = ["*"]

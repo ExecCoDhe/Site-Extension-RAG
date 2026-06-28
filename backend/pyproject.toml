@@ -9,6 +9,7 @@ dependencies = [
     "fastapi[standard]",
     "google-genai",
     "httpx",
+    "langsmith",
     "lxml",
     "lxml_html_clean",
     "numpy",

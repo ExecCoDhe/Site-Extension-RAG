@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "proj1 Hybrid RAG",
+  "name": "Aura",
   "version": "1.0.0",
   "description": "Sync a public website into a durable RAG workspace and ask questions grounded in its content.",
   "action": {

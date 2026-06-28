@@ -3,6 +3,8 @@ import re
 from collections import defaultdict
 from typing import Protocol
 
+from langsmith import traceable
+
 from app.config import Settings
 from app.index.embeddings import EmbeddingClient
 from app.retrieval.models import (
@@ -43,6 +45,7 @@ class RetrievalPipeline:
         self._session_memory = session_memory or {}
         self._dense_search_provider = dense_search_provider
 
+    @traceable(name="retrieval_pipeline")
     def retrieve(self, question: str) -> RetrievalResult:
         query_plan = self._query_plan(question)
         candidates_by_id: dict[str, RetrievalCandidate] = {}

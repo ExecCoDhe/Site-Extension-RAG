@@ -1,3 +1,4 @@
+from langsmith import traceable
 from pydantic import BaseModel
 
 from app.config import Settings
@@ -38,6 +39,7 @@ class ChatResponse(BaseModel):
     evidence: list[EvidenceSnippet] = []
     claims: list[dict[str, object]] = []
     trace_id: str | None = None
+    langsmith_run_id: str | None = None
     retrieval_trace: dict[str, object] = {}
 
 
@@ -85,6 +87,7 @@ def answer_question(
     )
 
 
+@traceable(name="rag_pipeline")
 def answer_workspace_question(
     *,
     question: str,

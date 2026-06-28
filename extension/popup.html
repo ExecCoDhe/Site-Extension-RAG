@@ -3,70 +3,90 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Hybrid RAG</title>
+    <title>Aura</title>
     <link rel="stylesheet" href="popup.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   </head>
   <body>
+    <div class="ambient-background"></div>
     <main>
-      <header>
-        <p class="eyebrow">Local Hybrid RAG</p>
+      <header class="stagger-1">
+        <span class="eyebrow">Aura Intelligence</span>
         <h1>Ask this site</h1>
       </header>
 
-      <section class="panel">
-        <div class="row">
-          <span class="label">Current tab</span>
-          <span id="current-host" class="value">Loading...</span>
-        </div>
-        <div class="row">
-          <span class="label">Workspace</span>
-          <span id="indexed-host" class="value">None</span>
-        </div>
-        <div class="row">
-          <span class="label">Pages</span>
-          <span id="page-count" class="value">0</span>
-        </div>
-        <div class="row">
-          <span class="label">Chunks</span>
-          <span id="chunk-count" class="value">0</span>
-        </div>
-        <div class="row">
-          <span class="label">Status</span>
-          <span id="status" class="status">Idle</span>
-        </div>
-        <div class="row">
-          <span class="label">Last sync</span>
-          <span id="last-sync" class="value">Never</span>
-        </div>
-        <div class="row">
-          <span class="label">Run stats</span>
-          <span id="sync-stats" class="value">None</span>
+      <section class="shell stagger-2">
+        <div class="core panel">
+          <div class="row">
+            <span class="label">Current tab</span>
+            <span id="current-host" class="value">Loading...</span>
+          </div>
+          <div class="row">
+            <span class="label">Workspace</span>
+            <span id="indexed-host" class="value">None</span>
+          </div>
+          <div class="row">
+            <span class="label">Pages</span>
+            <span id="page-count" class="value">0</span>
+          </div>
+          <div class="row">
+            <span class="label">Chunks</span>
+            <span id="chunk-count" class="value">0</span>
+          </div>
+          <div class="row">
+            <span class="label">Status</span>
+            <span id="status" class="status">Idle</span>
+          </div>
+          <div class="row">
+            <span class="label">Last sync</span>
+            <span id="last-sync" class="value">Never</span>
+          </div>
+          <div class="row" style="display:none;">
+            <span class="label">Run stats</span>
+            <span id="sync-stats" class="value">None</span>
+          </div>
         </div>
       </section>
 
-      <p id="message" class="message" role="status"></p>
+      <p id="message" class="message stagger-2" role="status"></p>
 
-      <section id="host-warning" class="warning hidden">
-        <p>This answer will use the indexed site, not the currently active tab.</p>
-        <label>
-          <input id="ack-host-warning" type="checkbox">
-          Ask about the indexed site anyway
-        </label>
+      <section id="host-warning" class="warning-shell hidden stagger-3">
+        <div class="warning-core">
+          <p>This answer will use the indexed site, not the currently active tab.</p>
+          <label class="checkbox-label">
+            <input id="ack-host-warning" type="checkbox">
+            <span>Ask about the indexed site anyway</span>
+          </label>
+        </div>
       </section>
 
-      <button id="start-button" type="button">Ingest / re-sync workspace</button>
+      <div class="stagger-3 action-group">
+        <button id="start-button" class="btn-secondary" type="button">Ingest Workspace</button>
+      </div>
 
-      <form id="chat-form">
-        <label for="question">Question</label>
-        <textarea id="question" rows="3" placeholder="Ask about the indexed site"></textarea>
-        <button id="submit-button" type="submit">Ask</button>
+      <form id="chat-form" class="shell stagger-4">
+        <div class="core chat-core">
+          <textarea id="question" rows="2" placeholder="Ask about the indexed site..."></textarea>
+          <button id="submit-button" class="btn-primary" type="submit">
+            <span>Ask</span>
+            <div class="btn-icon">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            </div>
+          </button>
+        </div>
       </form>
 
-      <section class="answer-panel">
-        <h2>Answer</h2>
-        <p id="answer">No answer yet.</p>
-        <h2>Evidence</h2>
-        <ul id="citations"></ul>
+      <section class="shell stagger-5" id="answer-container">
+        <div class="core answer-panel">
+          <h2>Answer</h2>
+          <p id="answer">No answer yet.</p>
+          <div class="evidence-section">
+            <h2>Evidence</h2>
+            <ul id="citations"></ul>
+          </div>
+        </div>
       </section>
     </main>
     <script src="popup.js"></script>

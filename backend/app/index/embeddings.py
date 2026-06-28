@@ -2,6 +2,7 @@ from typing import Protocol
 
 import httpx
 from google import genai
+from langsmith import traceable
 
 GOOGLE_EMBEDDING_BATCH_SIZE = 50
 DEFAULT_TIMEOUT_SECONDS = 60
@@ -30,9 +31,11 @@ class GoogleEmbeddingClient:
             http_options={"timeout": timeout_seconds * 1000},
         )
 
+    @traceable(name="embed_documents")
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         return self._embed(texts, task_type="RETRIEVAL_DOCUMENT")
 
+    @traceable(name="embed_query")
     def embed_query(self, text: str) -> list[float]:
         return self._embed([text], task_type="RETRIEVAL_QUERY")[0]
 

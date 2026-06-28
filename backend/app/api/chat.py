@@ -1,6 +1,7 @@
 import time
 
 from fastapi import APIRouter
+from langsmith import traceable
 from pydantic import BaseModel, Field
 
 from app.api.errors import error_response
@@ -21,6 +22,7 @@ class ChatRequest(BaseModel):
 
 
 @router.post("/chat")
+@traceable(name="chat_endpoint")
 def chat(request: ChatRequest) -> dict[str, object]:
     workspace = workspace_store.ensure_workspace()
     if workspace.state != WorkspaceState.READY:
@@ -74,6 +76,13 @@ def chat(request: ChatRequest) -> dict[str, object]:
         latency_ms=int((time.monotonic() - started_at) * 1000),
     )
     response.trace_id = trace_id
+    try:
+        from langsmith import get_current_run_tree
+        run_tree = get_current_run_tree()
+        if run_tree:
+            response.langsmith_run_id = str(run_tree.id)
+    except Exception:
+        pass
     workspace_store.update_session_memory(
         session_id=request.session_id,
         question=request.question,

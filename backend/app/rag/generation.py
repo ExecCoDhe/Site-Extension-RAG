@@ -1,8 +1,10 @@
 import json
+from html import escape
 from typing import Protocol
 
 import httpx
 from google import genai
+from langsmith import traceable
 from pydantic import BaseModel
 
 from app.index.embeddings import MissingGoogleConfiguration
@@ -15,6 +17,7 @@ VALID_GROUNDEDNESS = {"grounded", "partially_grounded", "not_grounded"}
 
 class GeneratedAnswer(BaseModel):
     answer: str
+    reasoning: str = ""
     grounded: bool = False
     supporting_chunk_ids: list[str] = []
     groundedness: str = "not_grounded"
@@ -51,22 +54,33 @@ class GoogleGenerationClient:
             http_options={"timeout": timeout_seconds * 1000},
         )
 
+    def generate_raw(self, prompt: str) -> str:
+        """Send a raw prompt and return the text response."""
+        response = self._client.models.generate_content(
+            model=self._model,
+            contents=prompt,
+        )
+        return response.text or ""
+
+    @traceable(name="generate_answer")
     def generate_answer(self, *, question: str, hits: list[SearchHit]) -> GeneratedAnswer:
         try:
             response = self._client.models.generate_content(
                 model=self._model,
                 contents=_build_prompt(question=question, hits=hits),
             )
-            payload = json.loads(response.text or "{}")
+            payload = _parse_json_object(response.text or "{}")
         except Exception as error:
             raise MissingGoogleConfiguration("Google chat configuration is unusable.") from error
 
         return GeneratedAnswer(
             answer=str(payload.get("answer", "")),
+            reasoning=str(payload.get("reasoning", "")),
             grounded=bool(payload.get("grounded", False)),
             supporting_chunk_ids=[str(item) for item in payload.get("supporting_chunk_ids", [])],
         )
 
+    @traceable(name="generate_answer_from_evidence")
     def generate_answer_from_evidence(
         self,
         *,
@@ -86,41 +100,63 @@ class GoogleGenerationClient:
 
 
 def _build_prompt(*, question: str, hits: list[SearchHit]) -> str:
-    context = "\n\n".join(
-        f"Chunk ID: {hit.chunk.chunk_id}\nTitle: {hit.chunk.title}\nURL: {hit.chunk.url}\nText: {hit.chunk.text}"
+    chunk_blocks = "\n".join(
+        f'<chunk id="{escape(hit.chunk.chunk_id)}">\n'
+        f"  <title>{escape(hit.chunk.title)}</title>\n"
+        f"  <url>{escape(hit.chunk.url)}</url>\n"
+        f"  <text>{escape(hit.chunk.text)}</text>\n"
+        f"</chunk>"
         for hit in hits
     )
-
     return (
-        "Answer the question using only the provided chunks. "
-        "If the chunks do not support an answer, say the indexed site content does not contain enough information. "
-        "Return only JSON with keys: answer, grounded, supporting_chunk_ids.\n\n"
-        f"Question: {question}\n\nContext:\n{context}"
+        "You are a grounded answering system. "
+        "Answer the question using ONLY the provided chunks.\n\n"
+        "<instructions>\n"
+        "1. Analyze each chunk for relevance to the question.\n"
+        "2. Reason step-by-step about which chunks support the answer.\n"
+        "3. If the chunks do not support an answer, say the indexed site "
+        "content does not contain enough information.\n"
+        "</instructions>\n\n"
+        f"<question>{escape(question)}</question>\n\n"
+        f"<chunks>\n{chunk_blocks}\n</chunks>\n\n"
+        "Return ONLY a JSON object with these keys:\n"
+        '- "reasoning": Your step-by-step analysis (string)\n'
+        '- "answer": The final answer based only on the chunks (string)\n'
+        '- "grounded": true if the answer is fully supported (boolean)\n'
+        '- "supporting_chunk_ids": Array of chunk IDs that support the answer'
     )
 
 
 def _build_evidence_prompt(*, question: str, evidence: list[EvidenceSnippet]) -> str:
-    context = "\n\n".join(
-        "\n".join(
-            [
-                f"Evidence ID: {item.evidence_id}",
-                f"Chunk ID: {item.chunk_id}",
-                f"Title: {item.title}",
-                f"URL: {item.url}",
-                f"Heading path: {' > '.join(item.heading_path)}",
-                f"Snippet: {item.snippet}",
-                f"Nearby parent context: {item.nearby_context or item.snippet}",
-            ]
-        )
+    evidence_blocks = "\n".join(
+        f'<evidence id="{escape(item.evidence_id)}" chunk="{escape(item.chunk_id)}">\n'
+        f"  <title>{escape(item.title)}</title>\n"
+        f"  <url>{escape(item.url)}</url>\n"
+        f"  <heading_path>{escape(' > '.join(item.heading_path))}</heading_path>\n"
+        f"  <snippet>{escape(item.snippet)}</snippet>\n"
+        f"  <nearby_context>{escape(item.nearby_context or item.snippet)}</nearby_context>\n"
+        f"</evidence>"
         for item in evidence
     )
     return (
-        "Answer the question using only the provided evidence snippets. "
-        "Return only JSON with keys: answer, groundedness, claims, supporting_evidence_ids. "
-        "groundedness must be one of grounded, partially_grounded, not_grounded. "
-        "Every material claim must include supporting_evidence_ids. "
-        "If evidence is insufficient, say the indexed site content does not contain enough information.\n\n"
-        f"Question: {question}\n\nEvidence:\n{context}"
+        "You are a grounded answering system. "
+        "Answer the question using ONLY the provided evidence snippets.\n\n"
+        "<instructions>\n"
+        "1. Analyze each evidence snippet for relevance to the question.\n"
+        "2. Reason step-by-step about which evidence supports the answer.\n"
+        "3. Synthesize a clear, accurate answer citing specific evidence IDs.\n"
+        "4. Every material claim must include supporting_evidence_ids.\n"
+        "5. If evidence is insufficient, say the indexed site content does "
+        "not contain enough information.\n"
+        "</instructions>\n\n"
+        f"<question>{escape(question)}</question>\n\n"
+        f"<evidence_collection>\n{evidence_blocks}\n</evidence_collection>\n\n"
+        "Return ONLY a JSON object with these keys:\n"
+        '- "reasoning": Your step-by-step analysis of the evidence (string)\n'
+        '- "answer": The final answer based only on evidence (string)\n'
+        '- "groundedness": One of "grounded", "partially_grounded", "not_grounded"\n'
+        '- "claims": Array of {"text", "supporting_evidence_ids", "supported"}\n'
+        '- "supporting_evidence_ids": Array of evidence IDs that support the answer'
     )
 
 
@@ -171,8 +207,10 @@ def _answer_from_evidence_payload(
         claims=claims,
         supporting_evidence_ids=supporting_evidence_ids,
     )
+    reasoning = str(payload.get("reasoning", "")).strip()
     return GeneratedAnswer(
         answer=answer if groundedness != "not_grounded" else NOT_FOUND_ANSWER,
+        reasoning=reasoning,
         grounded=groundedness == "grounded",
         groundedness=groundedness,
         claims=claims,
