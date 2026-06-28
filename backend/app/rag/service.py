@@ -8,7 +8,7 @@ from app.jobs.models import IngestJob
 from app.rag.generation import GenerationClient
 from app.retrieval import RetrievalPipeline
 from app.retrieval.models import EvidenceSnippet
-from app.retrieval.vector_store import QdrantDenseSearchProvider
+from app.retrieval.vector_store import LangChainQdrantDenseSearchProvider
 from app.workspace import Groundedness
 from app.workspace.models import ChildChunkRecord
 
@@ -111,7 +111,7 @@ def answer_workspace_question(
         chunks=chunks,
         embeddings=embeddings,
         session_memory=session_memory,
-        dense_search_provider=QdrantDenseSearchProvider(
+        dense_search_provider=LangChainQdrantDenseSearchProvider(
             path=settings.qdrant_path,
             collection_name=f"workspace_{chunks[0].workspace_id}",
         ),

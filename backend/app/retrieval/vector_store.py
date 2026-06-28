@@ -32,36 +32,44 @@ class QdrantVectorStore:
         from qdrant_client import QdrantClient
         from qdrant_client.models import Distance, PointStruct, VectorParams
 
-        client = QdrantClient(path=self.path)
         vectors = [vector for vector in embeddings.values() if vector]
         if not vectors:
             return
         dimension = len(vectors[0])
-        if not client.collection_exists(collection_name):
-            client.create_collection(
-                collection_name=collection_name,
-                vectors_config=VectorParams(size=dimension, distance=Distance.COSINE),
-            )
-        points = []
-        for chunk in chunks:
-            vector = embeddings.get(chunk.chunk_id)
-            if vector is None:
-                continue
-            points.append(
-                PointStruct(
-                    id=chunk.chunk_id,
-                    vector=vector,
-                    payload={
-                        "chunk_id": chunk.chunk_id,
-                        "workspace_id": chunk.workspace_id,
-                        "url": chunk.url,
-                        "title": chunk.title,
-                        "heading_path": chunk.heading_path,
-                    },
+
+        client = QdrantClient(path=self.path)
+        try:
+            if not client.collection_exists(collection_name):
+                client.create_collection(
+                    collection_name=collection_name,
+                    vectors_config=VectorParams(size=dimension, distance=Distance.COSINE),
                 )
-            )
-        if points:
-            client.upsert(collection_name=collection_name, points=points)
+            points = []
+            for chunk in chunks:
+                vector = embeddings.get(chunk.chunk_id)
+                if vector is None:
+                    continue
+                points.append(
+                    PointStruct(
+                        id=chunk.chunk_id,
+                        vector=vector,
+                        payload={
+                            "chunk_id": chunk.chunk_id,
+                            "section_id": chunk.section_id,
+                            "page_id": chunk.page_id,
+                            "workspace_id": chunk.workspace_id,
+                            "url": chunk.url,
+                            "title": chunk.title,
+                            "heading_path": chunk.heading_path,
+                            "token_start": chunk.token_start,
+                            "token_end": chunk.token_end,
+                        },
+                    )
+                )
+            if points:
+                client.upsert(collection_name=collection_name, points=points)
+        finally:
+            client.close()
 
 
 class QdrantDenseSearchProvider:
@@ -100,6 +108,66 @@ class QdrantDenseSearchProvider:
             if chunk_id:
                 scores[str(chunk_id)] = float(getattr(point, "score", 0.0))
         return scores
+
+
+class LangChainQdrantDenseSearchProvider:
+    """Dense search via langchain-qdrant QdrantVectorStore (reads only).
+
+    Implements DenseSearchProvider: returns {chunk_id: score} or None (None ->
+    SQLite-cosine fallback). The query vector is precomputed by the caller
+    (RETRIEVAL_QUERY); we never re-embed.
+    """
+
+    def __init__(self, *, path: str, collection_name: str) -> None:
+        self.path = path
+        self.collection_name = collection_name
+
+    def search_scores(
+        self,
+        query_embedding: list[float],
+        *,
+        limit: int,
+    ) -> dict[str, float] | None:
+        try:
+            from langchain_qdrant import QdrantVectorStore as LangChainQdrantStore
+            from langchain_qdrant import RetrievalMode
+            from qdrant_client import QdrantClient
+            from qdrant_client.models import Distance
+        except ImportError:
+            return None
+
+        client = None
+        try:
+            client = QdrantClient(path=self.path)
+            if not client.collection_exists(self.collection_name):
+                return None
+            store = LangChainQdrantStore(
+                client=client,
+                collection_name=self.collection_name,
+                embedding=None,
+                retrieval_mode=RetrievalMode.DENSE,
+                vector_name="",
+                distance=Distance.COSINE,
+                validate_embeddings=False,
+                validate_collection_config=False,
+            )
+            results = store.similarity_search_with_score_by_vector(
+                embedding=query_embedding,
+                k=limit,
+            )
+            scores: dict[str, float] = {}
+            for document, score in results:
+                chunk_id = document.metadata.get("_id") or document.metadata.get("chunk_id")
+                if chunk_id is not None:
+                    scores[str(chunk_id)] = float(score)
+            if not scores:
+                return None
+            return scores
+        except Exception:
+            return None
+        finally:
+            if client is not None:
+                client.close()
 
 
 def _query_points(
