@@ -5,7 +5,7 @@ from html import escape
 from langsmith import traceable
 from pydantic import BaseModel
 
-from app.rag.generation import GoogleGenerationClient, _parse_json_object
+from app.rag.generation import RawGenerationClient, _parse_json_object
 
 
 class FaithfulnessResult(BaseModel):
@@ -49,7 +49,7 @@ def evaluate_faithfulness(
     question: str,
     answer: str,
     evidence_snippets: list[str],
-    generation_client: GoogleGenerationClient,
+    generation_client: RawGenerationClient,
 ) -> FaithfulnessResult:
     """Use a secondary LLM call to evaluate answer faithfulness against evidence."""
     evidence_block = "\n".join(
@@ -65,6 +65,7 @@ def evaluate_faithfulness(
     try:
         raw_text = generation_client.generate_raw(prompt)
         payload = _parse_json_object(raw_text)
+        score = float(payload.get("score", 0.0))
     except Exception:
         return FaithfulnessResult(
             faithful=False,
@@ -72,7 +73,6 @@ def evaluate_faithfulness(
             reasoning="Failed to evaluate: generation error.",
         )
 
-    score = float(payload.get("score", 0.0))
     score = max(0.0, min(1.0, score))  # clamp to valid range
 
     return FaithfulnessResult(

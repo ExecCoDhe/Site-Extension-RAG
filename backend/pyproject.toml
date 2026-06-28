@@ -1,8 +1,15 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
-name = "proj1-backend"
+name = "aura-backend"
 version = "0.1.0"
 description = "Local FastAPI backend for the hybrid RAG Chrome extension."
+readme = "README.md"
+license = "MIT"
 requires-python = ">=3.11"
+authors = [{ name = "Dhedhanved Aggarwall" }]
 dependencies = [
     "beautifulsoup4",
     "faiss-cpu",
@@ -19,13 +26,30 @@ dependencies = [
     "python-dotenv",
     "qdrant-client",
     "trafilatura",
+    "langchain-google-genai>=4.2.6",
 ]
+
+[project.urls]
+Homepage = "https://github.com/ExecCoDhe/Site-Extension-RAG"
+Repository = "https://github.com/ExecCoDhe/Site-Extension-RAG"
 
 [dependency-groups]
 dev = [
     "pytest",
+    "ruff",
 ]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+ignore = ["E501"]

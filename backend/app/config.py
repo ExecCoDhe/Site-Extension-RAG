@@ -1,8 +1,26 @@
+import json
 from functools import lru_cache
 from pathlib import Path
+from typing import Annotated
 
-from pydantic import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import BeforeValidator, Field
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
+
+
+def _parse_cors_allow_origins(value: object) -> list[str]:
+    if isinstance(value, list):
+        return [str(item) for item in value]
+    if not isinstance(value, str):
+        return ["*"]
+    stripped = value.strip()
+    if not stripped or stripped == "*":
+        return ["*"]
+    if stripped.startswith("["):
+        loaded = json.loads(stripped)
+        if isinstance(loaded, list):
+            return [str(item) for item in loaded]
+        return [str(loaded)]
+    return [part.strip() for part in stripped.split(",") if part.strip()]
 
 # `env_file=".env"` is relative to the process CWD, so a run from the repo root
 # would read the wrong (or no) file while you edit `backend/.env`. Always load
@@ -31,7 +49,9 @@ class Settings(BaseSettings):
 
     host: str = "127.0.0.1"
     port: int = 8000
-    cors_allow_origins: list[str] = ["*"]
+    cors_allow_origins: Annotated[list[str], NoDecode, BeforeValidator(_parse_cors_allow_origins)] = [
+        "*"
+    ]
 
     sqlite_path: str = str(Path(__file__).resolve().parent.parent / ".local" / "workspace.sqlite3")
     qdrant_path: str = str(Path(__file__).resolve().parent.parent / ".local" / "qdrant")

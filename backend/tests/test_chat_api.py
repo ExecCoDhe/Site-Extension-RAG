@@ -136,8 +136,8 @@ def test_chat_before_ready_returns_error() -> None:
 
 
 def test_chat_returns_grounded_answer_with_citations(monkeypatch) -> None:
-    monkeypatch.setattr("app.api.chat.GoogleEmbeddingClient", FakeEmbeddingClient)
-    monkeypatch.setattr("app.api.chat.GoogleGenerationClient", FakeGenerationClient)
+    monkeypatch.setattr("app.api.chat.LangChainEmbeddingClient", FakeEmbeddingClient)
+    monkeypatch.setattr("app.api.chat.LangChainGenerationClient", FakeGenerationClient)
     make_ready_workspace()
     client = TestClient(app)
 
@@ -164,8 +164,8 @@ def test_chat_missing_google_configuration_returns_error() -> None:
 
 
 def test_chat_downgrades_unsupported_claims(monkeypatch) -> None:
-    monkeypatch.setattr("app.api.chat.GoogleEmbeddingClient", FakeEmbeddingClient)
-    monkeypatch.setattr("app.api.chat.GoogleGenerationClient", UnsupportedEvidenceGenerationClient)
+    monkeypatch.setattr("app.api.chat.LangChainEmbeddingClient", FakeEmbeddingClient)
+    monkeypatch.setattr("app.api.chat.LangChainGenerationClient", UnsupportedEvidenceGenerationClient)
     make_ready_workspace()
     client = TestClient(app)
 

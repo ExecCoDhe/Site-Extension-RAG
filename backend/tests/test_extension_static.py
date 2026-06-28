@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 EXTENSION_DIR = Path(__file__).resolve().parents[2] / "extension"
 
 

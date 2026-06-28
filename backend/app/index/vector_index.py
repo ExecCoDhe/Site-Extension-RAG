@@ -1,6 +1,6 @@
-from pydantic import BaseModel
 import faiss
 import numpy as np
+from pydantic import BaseModel
 
 from app.jobs.models import ChunkRecord
 

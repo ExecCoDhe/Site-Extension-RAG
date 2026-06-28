@@ -1,11 +1,10 @@
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from app.api.errors import ErrorCode
 from app.db import get_connection, initialize_database, validate_table_name
 from app.workspace.models import (
-    AcquisitionMethod,
     ChildChunkRecord,
     IngestRunSummary,
     PageVersionRecord,
@@ -19,7 +18,7 @@ DEFAULT_WORKSPACE_ID = "default"
 
 
 def utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 class WorkspaceStore:

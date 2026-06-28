@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from threading import Lock
 from uuid import uuid4
 
@@ -50,7 +50,7 @@ class InMemoryJobManager:
         with self._lock:
             job = self._jobs[job_id]
             job.state = JobState.READY
-            job.completed_at = datetime.now(timezone.utc)
+            job.completed_at = datetime.now(UTC)
             job.chunks = chunks
             job.vector_index = vector_index
 
@@ -65,7 +65,7 @@ class InMemoryJobManager:
         with self._lock:
             job = self._jobs[job_id]
             job.state = JobState.ERROR
-            job.completed_at = datetime.now(timezone.utc)
+            job.completed_at = datetime.now(UTC)
             job.error = ErrorBody(
                 code=code,
                 message=message,

@@ -5,7 +5,6 @@ from typing import Any
 
 from app.config import Settings, get_settings
 
-
 _pg_pool = None
 
 _VALID_TABLES = frozenset({

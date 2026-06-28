@@ -8,7 +8,7 @@ from app.api.errors import error_response
 from app.config import get_settings
 from app.crawl.crawler import crawl_site
 from app.crawl.security import is_public_http_url, registrable_domain
-from app.index import GoogleEmbeddingClient, MissingGoogleConfiguration
+from app.index import LangChainEmbeddingClient, MissingGoogleConfiguration
 from app.retrieval.vector_store import QdrantVectorStore
 from app.workspace import workspace_store
 from app.workspace.builder import build_workspace_records
@@ -98,7 +98,7 @@ async def _run_ingest_job(job_id: str, url: str) -> None:
             timeout_seconds=settings.crawl_timeout_seconds,
             max_pages=settings.max_crawl_pages,
             user_agent=settings.crawl_user_agent,
-            allow_registrable_domain=True,
+            allow_registrable_domain=False,
         )
     except Exception:
         logger.exception("Crawl failed for %s", url)
@@ -153,16 +153,16 @@ async def _run_ingest_job(job_id: str, url: str) -> None:
     child_embeddings = []
     if child_chunks:
         try:
-            child_embeddings = GoogleEmbeddingClient(
+            child_embeddings = LangChainEmbeddingClient(
                 api_key=settings.gemini_api_key,
                 model=settings.gemini_embedding_model,
                 timeout_seconds=settings.gemini_request_timeout_seconds,
             ).embed_documents([chunk.text for chunk in child_chunks])
-        except MissingGoogleConfiguration as error:
+        except MissingGoogleConfiguration:
             workspace_store.fail_run(
                 job_id,
                 code="MISSING_API_KEY",
-                message=str(error),
+                message="Backend Google API credentials or model configuration are missing or unusable.",
             )
             return
 

@@ -59,15 +59,17 @@ api_key.txt
 *.key
 *.pem
 
-
+# ===== Documentation =====
 README.md
 extension/README.md
 backend/README.md
-gcp-full-implementation-guide.md
 docs/
-todos/
-scripts/
-skills/
 plans/
-.agent/
+scripts/
+gcp-full-implementation-guide.md
 gemini.md
+
+# ===== Local Agent / Skill Artifacts =====
+todos/
+skills/
+.agent/

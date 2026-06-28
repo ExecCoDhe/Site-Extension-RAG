@@ -1,6 +1,5 @@
 import logging
 
-
 NOISY_LOGGERS = ("httpx", "requests", "urllib3")
 
 

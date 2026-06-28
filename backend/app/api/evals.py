@@ -1,15 +1,17 @@
 from fastapi import APIRouter
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.api.errors import error_response
 from app.config import get_settings
 from app.evals import EvalCase, run_retrieval_eval
 from app.evals.faithfulness import evaluate_faithfulness
-from app.index import GoogleEmbeddingClient, MissingGoogleConfiguration
-from app.rag import GoogleGenerationClient
+from app.index import LangChainEmbeddingClient, MissingGoogleConfiguration
+from app.rag import LangChainGenerationClient
 from app.workspace import WorkspaceState, workspace_store
 
 router = APIRouter()
+
+MAX_GENERATION_EVAL_CASES = 50
 
 
 class EvalRequest(BaseModel):
@@ -32,7 +34,7 @@ def retrieval_eval(request: EvalRequest) -> dict[str, object]:
         return run_retrieval_eval(
             cases=request.cases,
             settings=settings,
-            embedding_client=GoogleEmbeddingClient(
+            embedding_client=LangChainEmbeddingClient(
                 api_key=settings.gemini_api_key,
                 model=settings.gemini_embedding_model,
                 timeout_seconds=settings.gemini_request_timeout_seconds,
@@ -56,14 +58,23 @@ class GenerationEvalCase(BaseModel):
 
 
 class GenerationEvalRequest(BaseModel):
-    cases: list[GenerationEvalCase]
+    cases: list[GenerationEvalCase] = Field(max_length=MAX_GENERATION_EVAL_CASES)
 
 
 @router.post("/evals/generation")
 def generation_eval(request: GenerationEvalRequest) -> dict[str, object]:
+    workspace = workspace_store.ensure_workspace()
+    if workspace.state != WorkspaceState.READY:
+        return error_response(
+            code="CHAT_BEFORE_READY",
+            message="No ready workspace exists. Ingest the site before running evals.",
+            status_code=409,
+            retryable=True,
+        )
+
     settings = get_settings()
     try:
-        generation_client = GoogleGenerationClient(
+        generation_client = LangChainGenerationClient(
             api_key=settings.gemini_api_key,
             model=settings.gemini_chat_model,
             timeout_seconds=settings.gemini_request_timeout_seconds,

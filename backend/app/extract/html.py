@@ -40,7 +40,7 @@ def extract_page(url: str, html: str) -> ExtractedPage:
         quality_signals = _quality_signals(html=html, clean_text=normalized_text)
         record = PageRecord(
             url=url,
-            canonical_url=_canonicalize_url(url),
+            canonical_url=_extract_canonical_url(soup, url),
             title=title,
             clean_text=normalized_text,
             content_hash=hashlib.sha256(normalized_text.encode("utf-8")).hexdigest(),
@@ -116,6 +116,26 @@ def _looks_like_js_shell(html: str, clean_text: str) -> bool:
     has_app_root = any(marker in lowered for marker in ['id="root"', "id='root'", 'id="app"', "id='app'"])
     heavy_script = lowered.count("<script") >= 3
     return len(clean_text.split()) < 40 and (has_app_root or heavy_script)
+
+
+def _extract_canonical_url(soup: BeautifulSoup, page_url: str) -> str:
+    for link in soup.find_all("link", rel=True):
+        rel = link.get("rel")
+        if isinstance(rel, list):
+            rel_tokens = [part.lower() for part in rel]
+        else:
+            rel_tokens = [part.lower() for part in str(rel).split()]
+        if "canonical" not in rel_tokens:
+            continue
+        href = link.get("href")
+        if not href or not str(href).strip():
+            continue
+        absolute = urljoin(page_url, str(href).strip())
+        parts = urlsplit(absolute)
+        if parts.scheme not in {"http", "https"} or not parts.netloc:
+            continue
+        return _canonicalize_url(absolute)
+    return _canonicalize_url(page_url)
 
 
 def _canonicalize_url(url: str) -> str:

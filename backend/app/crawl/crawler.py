@@ -1,12 +1,12 @@
 import time
 from collections import deque
+from urllib.parse import urldefrag, urljoin, urlparse, urlsplit, urlunsplit
 from xml.etree import ElementTree
-from urllib.parse import urljoin, urlparse, urlsplit, urlunsplit, urldefrag
 
 import httpx
 from pydantic import BaseModel, Field
 
-from app.crawl.security import is_public_http_url, registrable_domain, same_hostname, same_registrable_domain
+from app.crawl.security import is_public_http_url, same_registrable_domain, same_site
 from app.extract.html import extract_page
 from app.jobs.models import PageRecord
 
@@ -24,12 +24,13 @@ async def crawl_site(
     timeout_seconds: int,
     max_pages: int,
     user_agent: str,
-    allow_registrable_domain: bool = True,
+    allow_registrable_domain: bool = False,
     client: httpx.AsyncClient | None = None,
 ) -> CrawlResult:
     started_at = time.monotonic()
     queue: deque[str] = deque([_normalize_url(seed_url)])
     seen: set[str] = set()
+    seen_content: set[tuple[str, str | None]] = set()
     pages: list[PageRecord] = []
     skipped_count = 0
     rendered_fallback_count = 0
@@ -104,7 +105,18 @@ async def crawl_site(
                 extracted.record.acquisition_method = (
                     "rendered_fallback" if extracted.rendered_fallback_recommended else "html"
                 )
-                pages.append(extracted.record)
+                record = extracted.record
+                dedup_key = _content_dedup_key(
+                    seed_url,
+                    record,
+                    final_url,
+                    allow_registrable_domain,
+                )
+                if dedup_key in seen_content:
+                    skipped_count += 1
+                    continue
+                seen_content.add(dedup_key)
+                pages.append(record)
 
             for link in extracted.links:
                 normalized_link = _normalize_url(link)
@@ -148,9 +160,24 @@ def _canonicalize_url(url: str) -> str:
 
 
 def _within_scope(seed_url: str, candidate_url: str, allow_registrable_domain: bool) -> bool:
-    if same_hostname(seed_url, candidate_url):
+    if same_site(seed_url, candidate_url):
         return True
     return allow_registrable_domain and same_registrable_domain(seed_url, candidate_url)
+
+
+def _content_dedup_key(
+    seed_url: str,
+    record: PageRecord,
+    final_url: str,
+    allow_registrable_domain: bool,
+) -> tuple[str, str | None]:
+    canonical_for_dedup = record.canonical_url or _canonicalize_url(final_url)
+    if record.canonical_url and (
+        not _within_scope(seed_url, record.canonical_url, allow_registrable_domain)
+        or not is_public_http_url(record.canonical_url)
+    ):
+        canonical_for_dedup = _canonicalize_url(final_url)
+    return (canonical_for_dedup, record.content_hash)
 
 
 def _sitemap_candidates(url: str) -> list[str]:

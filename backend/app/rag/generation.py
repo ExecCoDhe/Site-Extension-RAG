@@ -2,10 +2,10 @@ import json
 from html import escape
 from typing import Protocol
 
-import httpx
 from google import genai
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langsmith import traceable
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from app.index.embeddings import MissingGoogleConfiguration
 from app.index.vector_index import SearchHit
@@ -37,6 +37,11 @@ class EvidenceGenerationClient(Protocol):
         question: str,
         evidence: list[EvidenceSnippet],
     ) -> GeneratedAnswer:
+        pass
+
+
+class RawGenerationClient(Protocol):
+    def generate_raw(self, prompt: str) -> str:
         pass
 
 
@@ -97,6 +102,104 @@ class GoogleGenerationClient:
             raise MissingGoogleConfiguration("Google chat configuration is unusable.") from error
 
         return _answer_from_evidence_payload(payload, evidence)
+
+
+class _ClaimSchema(BaseModel):
+    text: str = ""
+    supporting_evidence_ids: list[str] = []
+    supported: bool = False
+
+
+class GeneratedAnswerSchema(BaseModel):
+    reasoning: str = ""
+    answer: str = ""
+    groundedness: str = "not_grounded"
+    claims: list[_ClaimSchema] = []
+    supporting_evidence_ids: list[str] = []
+
+
+def _message_text(message: object) -> str:
+    content = getattr(message, "content", message)
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        return "".join(
+            part.get("text", "") if isinstance(part, dict) else str(part) for part in content
+        )
+    return str(content or "")
+
+
+def _structured_payload_is_usable(payload: dict[str, object]) -> bool:
+    if payload.get("answer") or payload.get("claims") or payload.get("supporting_evidence_ids"):
+        return True
+    if str(payload.get("reasoning", "")).strip():
+        return True
+    groundedness = str(payload.get("groundedness", "not_grounded"))
+    return groundedness in VALID_GROUNDEDNESS and groundedness != "not_grounded"
+
+
+def _dump_structured_result(result: object) -> dict[str, object]:
+    if isinstance(result, BaseModel):
+        return result.model_dump()
+    if isinstance(result, dict):
+        return result
+    return {}
+
+
+class LangChainGenerationClient:
+    def __init__(self, *, api_key: str | None, model: str, timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS) -> None:
+        if not api_key:
+            raise MissingGoogleConfiguration("GEMINI_API_KEY is not configured.")
+
+        self._model = model
+        self._chat = ChatGoogleGenerativeAI(
+            model=model, api_key=api_key, timeout=timeout_seconds, vertexai=False
+        )
+        self._structured = self._chat.with_structured_output(
+            GeneratedAnswerSchema, method="json_schema"
+        )
+
+    def generate_raw(self, prompt: str) -> str:
+        return _message_text(self._chat.invoke(prompt))
+
+    @traceable(name="generate_answer")
+    def generate_answer(self, *, question: str, hits: list[SearchHit]) -> GeneratedAnswer:
+        prompt = _build_prompt(question=question, hits=hits)
+        try:
+            payload = _parse_json_object(self.generate_raw(prompt))
+        except Exception as error:
+            raise MissingGoogleConfiguration("Google chat configuration is unusable.") from error
+
+        return GeneratedAnswer(
+            answer=str(payload.get("answer", "")),
+            reasoning=str(payload.get("reasoning", "")),
+            grounded=bool(payload.get("grounded", False)),
+            supporting_chunk_ids=[str(item) for item in payload.get("supporting_chunk_ids", [])],
+        )
+
+    @traceable(name="generate_answer_from_evidence")
+    def generate_answer_from_evidence(
+        self,
+        *,
+        question: str,
+        evidence: list[EvidenceSnippet],
+    ) -> GeneratedAnswer:
+        prompt = _build_evidence_prompt(question=question, evidence=evidence)
+        try:
+            payload = self._structured_payload(prompt)
+        except Exception as error:
+            raise MissingGoogleConfiguration("Google chat configuration is unusable.") from error
+        return _answer_from_evidence_payload(payload, evidence)
+
+    def _structured_payload(self, prompt: str) -> dict[str, object]:
+        try:
+            result = self._structured.invoke(prompt)
+            payload = _dump_structured_result(result)
+            if _structured_payload_is_usable(payload):
+                return payload
+        except (ValidationError, TypeError, ValueError):
+            pass
+        return _parse_json_object(self.generate_raw(prompt))
 
 
 def _build_prompt(*, question: str, hits: list[SearchHit]) -> str:

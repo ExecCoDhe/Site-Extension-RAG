@@ -1,4 +1,4 @@
-from uuid import uuid5, NAMESPACE_URL
+from uuid import NAMESPACE_URL, uuid5
 
 from app.jobs.models import ChunkRecord, PageRecord
 from app.workspace.models import ChildChunkRecord, ParentSectionRecord

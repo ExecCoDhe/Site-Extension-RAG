@@ -2,7 +2,6 @@ import ipaddress
 import socket
 from urllib.parse import urlparse
 
-
 BLOCKED_HOSTNAMES = {"localhost"}
 
 
@@ -11,6 +10,19 @@ def same_hostname(seed_url: str, candidate_url: str) -> bool:
     candidate = urlparse(candidate_url)
     return bool(seed.hostname and candidate.hostname and seed.hostname == candidate.hostname)
 
+
+def same_site(seed_url: str, candidate_url: str) -> bool:
+    seed = urlparse(seed_url)
+    candidate = urlparse(candidate_url)
+    if not seed.hostname or not candidate.hostname:
+        return False
+    return _strip_www(seed.hostname.lower()) == _strip_www(candidate.hostname.lower())
+
+
+def _strip_www(hostname: str) -> str:
+    if hostname.startswith("www."):
+        return hostname[4:]
+    return hostname
 
 def same_registrable_domain(seed_url: str, candidate_url: str) -> bool:
     seed = urlparse(seed_url)

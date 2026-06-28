@@ -6,8 +6,8 @@ from pydantic import BaseModel, Field
 
 from app.api.errors import error_response
 from app.config import get_settings
-from app.index import GoogleEmbeddingClient, MissingGoogleConfiguration
-from app.rag import GoogleGenerationClient
+from app.index import LangChainEmbeddingClient, MissingGoogleConfiguration
+from app.rag import LangChainGenerationClient
 from app.rag.service import answer_workspace_question
 from app.workspace import WorkspaceState, workspace_store
 
@@ -41,12 +41,12 @@ def chat(request: ChatRequest) -> dict[str, object]:
             settings=settings,
             chunks=workspace_store.active_chunks(),
             embeddings=workspace_store.embeddings(settings.gemini_embedding_model),
-            embedding_client=GoogleEmbeddingClient(
+            embedding_client=LangChainEmbeddingClient(
                 api_key=settings.gemini_api_key,
                 model=settings.gemini_embedding_model,
                 timeout_seconds=settings.gemini_request_timeout_seconds,
             ),
-            generation_client=GoogleGenerationClient(
+            generation_client=LangChainGenerationClient(
                 api_key=settings.gemini_api_key,
                 model=settings.gemini_chat_model,
                 timeout_seconds=settings.gemini_request_timeout_seconds,

@@ -1,4 +1,3 @@
-from collections import defaultdict
 
 from app.chunking import build_hierarchical_chunks
 from app.config import Settings

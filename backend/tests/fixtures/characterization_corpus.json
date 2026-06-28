@@ -1,0 +1,126 @@
+{
+  "workspace_id": "char_workspace",
+  "chunking_version": "test",
+  "embedding_version": "char-fixture",
+  "pages": [
+    {
+      "page_id": "page_docs",
+      "canonical_url": "https://example.com/docs",
+      "discovered_url": "https://example.com/docs",
+      "title": "Documentation",
+      "clean_text": "alpha setup guide beta advanced features"
+    },
+    {
+      "page_id": "page_pricing",
+      "canonical_url": "https://example.com/pricing",
+      "discovered_url": "https://example.com/pricing",
+      "title": "Pricing",
+      "clean_text": "pricing plans monthly annual"
+    }
+  ],
+  "sections": [
+    {
+      "section_id": "section_getting_started",
+      "page_id": "page_docs",
+      "heading_path": ["Getting Started"],
+      "section_index": 0,
+      "text": "alpha setup guide first steps alpha configuration detailed steps",
+      "start_offset": 0,
+      "end_offset": 70
+    },
+    {
+      "section_id": "section_advanced",
+      "page_id": "page_docs",
+      "heading_path": ["Advanced"],
+      "section_index": 1,
+      "text": "beta advanced features overview",
+      "start_offset": 70,
+      "end_offset": 101
+    },
+    {
+      "section_id": "section_plans",
+      "page_id": "page_pricing",
+      "heading_path": ["Plans"],
+      "section_index": 0,
+      "text": "pricing plans monthly annual tiers",
+      "start_offset": 0,
+      "end_offset": 34
+    }
+  ],
+  "chunks": [
+    {
+      "chunk_id": "chunk_alpha_setup",
+      "section_id": "section_getting_started",
+      "page_id": "page_docs",
+      "title": "Documentation",
+      "url": "https://example.com/docs",
+      "heading_path": ["Getting Started"],
+      "text": "alpha setup guide first steps",
+      "token_start": 0,
+      "token_end": 5
+    },
+    {
+      "chunk_id": "chunk_alpha_config",
+      "section_id": "section_getting_started",
+      "page_id": "page_docs",
+      "title": "Documentation",
+      "url": "https://example.com/docs",
+      "heading_path": ["Getting Started"],
+      "text": "alpha configuration detailed steps",
+      "token_start": 5,
+      "token_end": 10
+    },
+    {
+      "chunk_id": "chunk_beta_advanced",
+      "section_id": "section_advanced",
+      "page_id": "page_docs",
+      "title": "Documentation",
+      "url": "https://example.com/docs",
+      "heading_path": ["Advanced"],
+      "text": "beta advanced features overview",
+      "token_start": 0,
+      "token_end": 5
+    },
+    {
+      "chunk_id": "chunk_pricing_plans",
+      "section_id": "section_plans",
+      "page_id": "page_pricing",
+      "title": "Pricing",
+      "url": "https://example.com/pricing",
+      "heading_path": ["Plans"],
+      "text": "pricing plans monthly annual tiers",
+      "token_start": 0,
+      "token_end": 5
+    }
+  ],
+  "embeddings": {
+    "chunk_alpha_setup": [1.0, 0.0, 0.0],
+    "chunk_alpha_config": [0.95, 0.05, 0.0],
+    "chunk_beta_advanced": [0.0, 1.0, 0.0],
+    "chunk_pricing_plans": [0.0, 0.0, 1.0]
+  },
+  "query_embeddings": {
+    "alpha": [1.0, 0.0, 0.0],
+    "beta": [0.0, 1.0, 0.0],
+    "pricing": [0.0, 0.0, 1.0],
+    "default": [0.0, 0.0, 0.0]
+  },
+  "questions": {
+    "happy_path": {
+      "text": "What is alpha setup?",
+      "expected_chunk_ids": ["chunk_alpha_setup", "chunk_alpha_config"],
+      "expected_urls": ["https://example.com/docs"]
+    },
+    "compound": {
+      "text": "alpha setup and pricing plans",
+      "expect_decomposed": true,
+      "expected_chunk_ids": ["chunk_alpha_setup", "chunk_alpha_config", "chunk_pricing_plans"],
+      "expected_urls": ["https://example.com/docs", "https://example.com/pricing"]
+    },
+    "no_match": {
+      "text": "quantum entanglement physics",
+      "expected_chunk_ids": [],
+      "expected_urls": []
+    }
+  }
+}

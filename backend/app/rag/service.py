@@ -5,13 +5,12 @@ from app.config import Settings
 from app.index.embeddings import EmbeddingClient
 from app.index.vector_index import VectorIndex
 from app.jobs.models import IngestJob
-from app.retrieval import RetrievalPipeline
-from app.retrieval.vector_store import QdrantDenseSearchProvider
-from app.retrieval.models import EvidenceSnippet
 from app.rag.generation import GenerationClient
+from app.retrieval import RetrievalPipeline
+from app.retrieval.models import EvidenceSnippet
+from app.retrieval.vector_store import QdrantDenseSearchProvider
 from app.workspace import Groundedness
 from app.workspace.models import ChildChunkRecord
-
 
 NOT_FOUND_ANSWER = "The indexed site content does not contain enough information to answer that."
 

@@ -69,3 +69,21 @@ def test_extract_page_without_readable_text_returns_no_record() -> None:
     extracted = extract_page("https://example.com/empty", "<html><body></body></html>")
 
     assert extracted.record is None
+
+
+def test_extract_page_uses_html_canonical_link() -> None:
+    html = """
+    <html>
+      <head>
+        <title>Print</title>
+        <link rel="canonical" href="https://example.com/article" />
+      </head>
+      <body><main><p>Readable print view content for indexing.</p></main></body>
+    </html>
+    """
+
+    extracted = extract_page("https://example.com/article/print", html)
+
+    assert extracted.record is not None
+    assert extracted.record.canonical_url == "https://example.com/article"
+    assert extracted.record.url == "https://example.com/article/print"

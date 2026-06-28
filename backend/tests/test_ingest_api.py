@@ -176,7 +176,7 @@ def test_run_ingest_embeds_persisted_child_chunks(monkeypatch) -> None:
 
     monkeypatch.setattr("app.api.ingest.get_settings", lambda: settings)
     monkeypatch.setattr("app.api.ingest.crawl_site", fake_crawl_site)
-    monkeypatch.setattr("app.api.ingest.GoogleEmbeddingClient", FakeEmbeddingClient)
+    monkeypatch.setattr("app.api.ingest.LangChainEmbeddingClient", FakeEmbeddingClient)
     monkeypatch.setattr("app.api.ingest.QdrantVectorStore", NoopVectorStore)
 
     import anyio
@@ -229,7 +229,7 @@ def test_run_ingest_skips_unchanged_pages_on_resync(monkeypatch) -> None:
     )
     monkeypatch.setattr("app.api.ingest.get_settings", lambda: settings)
     monkeypatch.setattr("app.api.ingest.crawl_site", fake_crawl_site)
-    monkeypatch.setattr("app.api.ingest.GoogleEmbeddingClient", FakeEmbeddingClient)
+    monkeypatch.setattr("app.api.ingest.LangChainEmbeddingClient", FakeEmbeddingClient)
     monkeypatch.setattr("app.api.ingest.QdrantVectorStore", NoopVectorStore)
 
     import anyio
@@ -264,3 +264,54 @@ def test_run_ingest_skips_unchanged_pages_on_resync(monkeypatch) -> None:
     assert stored_second_run.skipped_count == 1
     assert FakeEmbeddingClient.calls == [["one two three", "four five six", "seven"]]
     assert {chunk.chunk_id for chunk in workspace_store.active_chunks()} == initial_chunk_ids
+
+
+def test_run_ingest_calls_crawl_with_same_hostname_scope(monkeypatch) -> None:
+    from app.api.ingest import run_ingest_job
+    from app.config import Settings
+    from app.crawl.crawler import CrawlResult
+
+    crawl_kwargs: dict[str, object] = {}
+
+    async def fake_crawl_site(*args, **kwargs) -> CrawlResult:
+        crawl_kwargs.update(kwargs)
+        return CrawlResult(
+            pages=[
+                PageRecord(
+                    url="https://example.com/a",
+                    canonical_url="https://example.com/a",
+                    title="A",
+                    clean_text="one two three four five six seven",
+                    content_hash="hash",
+                    heading_paths=[["A"]],
+                )
+            ]
+        )
+
+    settings = Settings(
+        gemini_api_key="fake",
+        gemini_embedding_model="fake-embedding",
+        child_chunk_token_budget=3,
+        child_chunk_token_overlap=0,
+        chunking_version="test-child",
+    )
+    run = workspace_store.start_ingest_run(
+        seed_url="https://example.com/a",
+        hostname="example.com",
+        registrable_domain="example.com",
+        included_subdomains=["example.com"],
+        chunking_version=settings.chunking_version,
+        embedding_version=settings.gemini_embedding_model,
+    )
+    assert run is not None
+
+    monkeypatch.setattr("app.api.ingest.get_settings", lambda: settings)
+    monkeypatch.setattr("app.api.ingest.crawl_site", fake_crawl_site)
+    monkeypatch.setattr("app.api.ingest.LangChainEmbeddingClient", FakeEmbeddingClient)
+    monkeypatch.setattr("app.api.ingest.QdrantVectorStore", NoopVectorStore)
+
+    import anyio
+
+    anyio.run(run_ingest_job, run.run_id, "https://example.com/a")
+
+    assert crawl_kwargs.get("allow_registrable_domain") is False
