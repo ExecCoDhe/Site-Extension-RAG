@@ -1,0 +1,27 @@
+{
+  "chunking_version": "dom-heading-token-v2",
+  "embedding_model": "gemini-embedding-001",
+  "fixed_run_id": "eval-fixed-run-v1",
+  "embedding_dim": 3072,
+  "generated_at": "2026-06-29T02:40:28.470647+00:00",
+  "sites": [
+    {
+      "site": "acme_docs",
+      "hostname": "acme.example",
+      "registrable_domain": "example",
+      "seed_url": "https://acme.example/docs/setup"
+    },
+    {
+      "site": "nimbus_api",
+      "hostname": "api.nimbus.example",
+      "registrable_domain": "example",
+      "seed_url": "https://api.nimbus.example/reference/auth"
+    },
+    {
+      "site": "orchard_co",
+      "hostname": "orchard.example",
+      "registrable_domain": "example",
+      "seed_url": "https://orchard.example/about"
+    }
+  ]
+}

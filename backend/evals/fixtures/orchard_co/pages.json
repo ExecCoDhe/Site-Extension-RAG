@@ -1,0 +1,62 @@
+[
+  {
+    "url": "https://orchard.example/about",
+    "canonical_url": "https://orchard.example/about",
+    "content_hash": "a3fad129e2881c47367da7867ba20dfe8bcbd8ea2f6afbed767aef626287afcc",
+    "title": "About Orchard",
+    "heading_paths": [
+      [
+        "About"
+      ]
+    ],
+    "clean_text": "Orchard Cooperative builds privacy-first collaboration tools for distributed teams. Founded in 2019, Orchard hosts all customer data in SOC2 certified regions and publishes a transparency report each quarter."
+  },
+  {
+    "url": "https://orchard.example/support",
+    "canonical_url": "https://orchard.example/support",
+    "content_hash": "d5a82ee1ba1676a413a6f14fb0cf154f7667829c1dfae211146235b5d5c21c67",
+    "title": "Support",
+    "heading_paths": [
+      [
+        "Support"
+      ]
+    ],
+    "clean_text": "Support hours are Monday through Friday 9am to 6pm Pacific. Email support@orchard.example for billing questions. Enterprise customers receive a dedicated Slack channel with a one hour response SLA."
+  },
+  {
+    "url": "https://orchard.example/data-handling",
+    "canonical_url": "https://orchard.example/data-handling",
+    "content_hash": "0d2f155d55cd5eade782dd0b0c2f6e0112f5921f996f612358dad30500c93faf",
+    "title": "Data Handling",
+    "heading_paths": [
+      [
+        "Data Handling"
+      ]
+    ],
+    "clean_text": "Orchard encrypts data at rest with AES-256 and in transit with TLS 1.3. Customer content is never used to train third-party models. Data deletion requests are completed within thirty days."
+  },
+  {
+    "url": "https://orchard.example/faq",
+    "canonical_url": "https://orchard.example/faq",
+    "content_hash": "e034e7bad0f990defbe77199021b976ae235f318cbedbe9961e781589a2a766e",
+    "title": "FAQ",
+    "heading_paths": [
+      [
+        "FAQ"
+      ]
+    ],
+    "clean_text": "Frequently asked questions cover billing cycles, seat transfers, export formats, and downtime notifications. Trial accounts last fourteen days and convert automatically unless cancelled from the billing portal."
+  },
+  {
+    "url": "https://orchard.example/policies",
+    "canonical_url": "https://orchard.example/policies",
+    "content_hash": "a76409bfd3ca1d140a586da0d0952ee225fd2d0f9c3f7d06bea9c359759c9a0c",
+    "title": "Policy Compendium",
+    "heading_paths": [
+      [
+        "Policies"
+      ]
+    ],
+    "clean_text": "Orchard policy compendium details acceptable use incident response vendor subprocessors data residency options cookie categories accessibility commitments whistleblower protections and board oversight procedures for regulated industries. word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph"
+  }
+]

@@ -1,0 +1,15 @@
+{"site": "acme_docs", "question": "How do I set up the Acme desktop agent?", "expected_chunk_ids": ["67f82ae8-4db7-509a-a889-b09800b96001"], "expected_urls": ["https://acme.example/docs/setup"]}
+{"site": "acme_docs", "question": "What does the Free plan include?", "expected_chunk_ids": ["9fa19e83-162b-5e03-b627-4949c6b7d291"], "expected_urls": ["https://acme.example/docs/pricing"]}
+{"site": "acme_docs", "question": "Compare the Free plan and the Pro plan", "expected_urls": ["https://acme.example/docs/pricing"], "should_decompose": true}
+{"site": "acme_docs", "question": "What is the daily API request cap on the Free plan?", "expected_chunk_ids": ["7367dbb7-f167-5d85-b96f-bb0d6cd53526"], "expected_urls": ["https://acme.example/docs/limits"]}
+{"site": "acme_docs", "question": "Which third-party tools does Acme integrate with?", "expected_chunk_ids": ["7cd1820b-996b-5afb-b879-0a9d89be8c77"], "expected_urls": ["https://acme.example/docs/integrations"]}
+{"site": "nimbus_api", "question": "How do I authenticate to the Nimbus API?", "expected_chunk_ids": ["f1604c12-b5e6-50ce-8206-e415def482b2"], "expected_urls": ["https://api.nimbus.example/reference/auth"]}
+{"site": "nimbus_api", "question": "Which endpoint lists projects?", "expected_chunk_ids": ["db57dcb2-6dc3-523c-9136-f0da3f068d21"], "expected_urls": ["https://api.nimbus.example/reference/endpoints"]}
+{"site": "nimbus_api", "question": "What is the difference between standard and enterprise rate limits?", "expected_chunk_ids": ["b3cff544-5f35-5ff0-bffa-3cd9db9c5489"], "expected_urls": ["https://api.nimbus.example/reference/rate-limits"], "should_decompose": true}
+{"site": "nimbus_api", "question": "Compare Nimbus authentication and webhook delivery", "expected_urls": ["https://api.nimbus.example/reference/auth", "https://api.nimbus.example/reference/webhooks"], "should_decompose": true}
+{"site": "nimbus_api", "question": "What HTTP status code indicates expired credentials?", "expected_chunk_ids": ["92ad9bc3-5d16-5525-9fb4-dcd76bf28ce0"], "expected_urls": ["https://api.nimbus.example/reference/errors"]}
+{"site": "orchard_co", "question": "When was Orchard Cooperative founded?", "expected_chunk_ids": ["6d4831c4-f49f-5aea-ae10-cbf7ba3efbd2"], "expected_urls": ["https://orchard.example/about"]}
+{"site": "orchard_co", "question": "What are Orchard support hours?", "expected_chunk_ids": ["ffa33732-00d7-5e9e-bf46-ab9ed5ab9fd0"], "expected_urls": ["https://orchard.example/support"]}
+{"site": "orchard_co", "question": "Compare Orchard support hours and data encryption", "expected_urls": ["https://orchard.example/support", "https://orchard.example/data-handling"], "should_decompose": true}
+{"site": "orchard_co", "question": "How does Orchard encrypt customer data?", "expected_chunk_ids": ["1239c7ca-7f51-58d8-802c-3454d34221c5"], "expected_urls": ["https://orchard.example/data-handling"]}
+{"site": "orchard_co", "question": "How long does an Orchard trial last?", "expected_chunk_ids": ["bf981f33-2153-5e6a-8236-72042e656e2e"], "expected_urls": ["https://orchard.example/faq"]}

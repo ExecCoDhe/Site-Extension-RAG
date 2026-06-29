@@ -1,0 +1,62 @@
+[
+  {
+    "url": "https://acme.example/docs/setup",
+    "canonical_url": "https://acme.example/docs/setup",
+    "content_hash": "6e8564310829f2eb4cf7d8e8cba55bcbe996932991d67695d10fc2658a5eefbc",
+    "title": "Setup Guide",
+    "heading_paths": [
+      [
+        "Getting Started"
+      ]
+    ],
+    "clean_text": "Acme Widget setup requires creating an account, verifying your email, and installing the desktop agent. The agent connects to acme.example and syncs your workspace within five minutes. Use the setup wizard from the dashboard to generate an API token for integrations."
+  },
+  {
+    "url": "https://acme.example/docs/pricing",
+    "canonical_url": "https://acme.example/docs/pricing",
+    "content_hash": "ced8ed4e53bd69313b6183cba7b99c634a25c795b686602220f2693b52f26b5d",
+    "title": "Pricing",
+    "heading_paths": [
+      [
+        "Plans"
+      ]
+    ],
+    "clean_text": "Acme offers two plans. The Free plan includes three seats, one workspace, and community support. The Pro plan includes unlimited seats, priority support, audit logs, and SSO. Annual billing saves twenty percent compared to monthly billing."
+  },
+  {
+    "url": "https://acme.example/docs/limits",
+    "canonical_url": "https://acme.example/docs/limits",
+    "content_hash": "d0710de29de4b6f2c52ee23928d078fa63a82d4f035619245b32f8d1f5e4f64e",
+    "title": "Usage Limits",
+    "heading_paths": [
+      [
+        "Limits"
+      ]
+    ],
+    "clean_text": "Free workspaces are limited to one thousand API requests per day and fifty megabytes of uploaded assets. Pro workspaces allow fifty thousand API requests per day and five gigabytes of assets. Burst traffic above the daily cap returns HTTP 429."
+  },
+  {
+    "url": "https://acme.example/docs/integrations",
+    "canonical_url": "https://acme.example/docs/integrations",
+    "content_hash": "49e5f0cff64f0b89e988567d7f0e7a2f1722e1e035232872c9a6ce23d34d46c8",
+    "title": "Integrations",
+    "heading_paths": [
+      [
+        "Integrations"
+      ]
+    ],
+    "clean_text": "Acme integrates with Slack, GitHub, and Jira using OAuth applications. Each integration stores refresh tokens encrypted at rest. Webhook deliveries retry three times with exponential backoff."
+  },
+  {
+    "url": "https://acme.example/docs/reference",
+    "canonical_url": "https://acme.example/docs/reference",
+    "content_hash": "9f458998e0a9277083c9bbadff5487c045463439f9ffb3068fe00bc4184b07c1",
+    "title": "Platform Reference",
+    "heading_paths": [
+      [
+        "Reference"
+      ]
+    ],
+    "clean_text": "Acme platform reference enumerates every configuration flag audit event retention policy export format and migration checklist for enterprise administrators reviewing compliance controls. word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation"
+  }
+]

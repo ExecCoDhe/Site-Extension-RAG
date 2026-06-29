@@ -1,0 +1,74 @@
+[
+  {
+    "url": "https://api.nimbus.example/reference/auth",
+    "canonical_url": "https://api.nimbus.example/reference/auth",
+    "content_hash": "49cdb63841f817917e7188c83656867c44c73cb79afa5457dc2e96fec2f623d1",
+    "title": "Authentication",
+    "heading_paths": [
+      [
+        "Authentication"
+      ]
+    ],
+    "clean_text": "Nimbus API authentication uses bearer tokens issued from the developer console. Include Authorization Bearer header on every request. Tokens expire after twenty four hours and must be refreshed using the POST /oauth/token endpoint with client credentials."
+  },
+  {
+    "url": "https://api.nimbus.example/reference/endpoints",
+    "canonical_url": "https://api.nimbus.example/reference/endpoints",
+    "content_hash": "56b1703b4e7fe7762c60ee7466f90a7937cf102a5b9014fc7e67b44fb2626182",
+    "title": "Endpoints",
+    "heading_paths": [
+      [
+        "Endpoints"
+      ]
+    ],
+    "clean_text": "Core endpoints include GET /v1/projects to list projects, POST /v1/projects to create a project, GET /v1/projects/{id}/events to stream events, and DELETE /v1/projects/{id} to archive a project. All endpoints return JSON and accept application/json bodies."
+  },
+  {
+    "url": "https://api.nimbus.example/reference/rate-limits",
+    "canonical_url": "https://api.nimbus.example/reference/rate-limits",
+    "content_hash": "6425a87f8630847f5451d7a868a24540323113056e1d23ba1b60bbd73b9370a4",
+    "title": "Rate Limits",
+    "heading_paths": [
+      [
+        "Rate Limits"
+      ]
+    ],
+    "clean_text": "Standard tier allows one hundred requests per minute per API key. Enterprise tier allows one thousand requests per minute. Rate limit headers X-RateLimit-Limit and X-RateLimit-Remaining are included on every response."
+  },
+  {
+    "url": "https://api.nimbus.example/reference/errors",
+    "canonical_url": "https://api.nimbus.example/reference/errors",
+    "content_hash": "ad0ea1a4a49da81331f20400878ab14298f6a1a02f27ea37fbadcb3018608c94",
+    "title": "Errors",
+    "heading_paths": [
+      [
+        "Errors"
+      ]
+    ],
+    "clean_text": "Nimbus returns structured errors with code, message, and request_id fields. HTTP 400 indicates validation failures, 401 indicates missing or expired credentials, 403 indicates insufficient scope, and 429 indicates rate limiting."
+  },
+  {
+    "url": "https://api.nimbus.example/reference/webhooks",
+    "canonical_url": "https://api.nimbus.example/reference/webhooks",
+    "content_hash": "a7dd2771a984b7c537b11a28972759330ed2c7eb5a2aaf288f9dbf138cce2fa5",
+    "title": "Webhooks",
+    "heading_paths": [
+      [
+        "Webhooks"
+      ]
+    ],
+    "clean_text": "Webhook subscriptions are created with POST /v1/webhooks and verified using HMAC SHA256 signatures in the X-Nimbus-Signature header. Delivery attempts retry up to five times across fifteen minutes."
+  },
+  {
+    "url": "https://api.nimbus.example/reference/full",
+    "canonical_url": "https://api.nimbus.example/reference/full",
+    "content_hash": "a57eb076e5e97fae96c9ebd90e51c8f35e7a259cabba61ce8b2bc686c669eaf2",
+    "title": "Full API Catalog",
+    "heading_paths": [
+      [
+        "Catalog"
+      ]
+    ],
+    "clean_text": "Nimbus full API catalog documents pagination cursors idempotency keys batch export filters sorting indexes sandbox behavior changelog deprecations sunset dates and migration guides for every public resource. word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample paragraph detail section reference documentation content item word token sample"
+  }
+]

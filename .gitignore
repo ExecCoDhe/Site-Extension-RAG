@@ -59,7 +59,13 @@ api_key.txt
 *.key
 *.pem
 
-# ===== Documentation (internal only) =====
+# ===== Documentation =====
+README.md
+extension/README.md
+backend/README.md
+docs/
+plans/
+scripts/
 gcp-full-implementation-guide.md
 gemini.md
 
