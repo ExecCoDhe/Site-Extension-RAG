@@ -1,3 +1,4 @@
+from langchain_core.runnables import RunnableLambda
 from langsmith import traceable
 from pydantic import BaseModel
 
@@ -87,7 +88,158 @@ def answer_question(
     )
 
 
-@traceable(name="rag_pipeline")
+class WorkspaceRagPipeline:
+    """LCEL composition of the workspace RAG flow (retrieve -> generate -> assemble).
+
+    Mirrors RetrievalPipeline: __init__ takes the dependencies, answer(question)
+    builds + invokes the RunnableLambda chain. The generation_client seam and
+    _deterministic_evidence_answer fallback are preserved so injected fakes keep
+    working.
+    """
+
+    def __init__(
+        self,
+        *,
+        settings: Settings,
+        chunks: list[ChildChunkRecord],
+        embeddings: dict[str, list[float]],
+        embedding_client: EmbeddingClient,
+        generation_client,
+        session_memory: dict[str, object] | None = None,
+    ) -> None:
+        self._settings = settings
+        self._chunks = chunks
+        self._embeddings = embeddings
+        self._embedding_client = embedding_client
+        self._generation_client = generation_client
+        self._session_memory = session_memory
+
+    @traceable(name="rag_pipeline")
+    def answer(self, question: str) -> ChatResponse:
+        if not self._chunks:
+            return ChatResponse(
+                answer=NOT_FOUND_ANSWER,
+                grounded=False,
+                groundedness=Groundedness.NOT_GROUNDED,
+                citations=[],
+            )
+        chain = (
+            RunnableLambda(self._retrieve_step).with_config(run_name="retrieve")
+            | RunnableLambda(self._generate_step).with_config(run_name="generate")
+            | RunnableLambda(self._assemble_response_step).with_config(
+                run_name="assemble_response"
+            )
+        )
+        return chain.invoke(question)
+
+    def _retrieve_step(self, question: str) -> dict:
+        retrieval = RetrievalPipeline(
+            settings=self._settings,
+            embedding_client=self._embedding_client,
+            chunks=self._chunks,
+            embeddings=self._embeddings,
+            session_memory=self._session_memory,
+            dense_search_provider=LangChainQdrantDenseSearchProvider(
+                path=self._settings.qdrant_path,
+                collection_name=f"workspace_{self._chunks[0].workspace_id}",
+            ),
+            sparse_search_provider=BM25SparseSearchProvider(chunks=self._chunks),
+        ).retrieve(question)
+        return {"question": question, "retrieval": retrieval}
+
+    def _generate_step(self, state: dict) -> dict:
+        retrieval = state["retrieval"]
+        if not retrieval.evidence:
+            state["generated"] = None
+            return state
+        if hasattr(self._generation_client, "generate_answer_from_evidence"):
+            state["generated"] = self._generation_client.generate_answer_from_evidence(
+                question=state["question"],
+                evidence=retrieval.evidence,
+            )
+        else:
+            state["generated"] = _deterministic_evidence_answer(
+                state["question"], retrieval.evidence
+            )
+        return state
+
+    def _assemble_response_step(self, state: dict) -> ChatResponse:
+        retrieval = state["retrieval"]
+        generated = state["generated"]
+        if generated is None:
+            return ChatResponse(
+                answer=NOT_FOUND_ANSWER,
+                grounded=False,
+                groundedness=Groundedness.NOT_GROUNDED,
+                citations=[],
+            )
+        evidence_by_id = {item.evidence_id: item for item in retrieval.evidence}
+        supporting_evidence_ids = [
+            evidence_id
+            for evidence_id in generated.supporting_evidence_ids
+            if evidence_id in evidence_by_id
+        ]
+        groundedness = _groundedness_from_generated(
+            generated.groundedness,
+            supporting_evidence_ids,
+            generated.claims,
+        )
+        if groundedness == Groundedness.NOT_GROUNDED:
+            return ChatResponse(
+                answer=NOT_FOUND_ANSWER,
+                grounded=False,
+                groundedness=groundedness,
+                citations=[],
+                evidence=[],
+                claims=generated.claims,
+            )
+        used_evidence = [evidence_by_id[evidence_id] for evidence_id in supporting_evidence_ids]
+        citations = [
+            Citation(
+                url=item.url,
+                title=item.title,
+                chunk_id=item.chunk_id,
+                score=item.rerank_score,
+                section=" > ".join(item.heading_path) if item.heading_path else None,
+                snippet=item.snippet,
+                nearby_context=item.nearby_context,
+                evidence_id=item.evidence_id,
+                parent_context_id=item.parent_context_id,
+                dense_score=item.dense_score,
+                sparse_score=item.sparse_score,
+                rerank_score=item.rerank_score,
+            )
+            for item in used_evidence
+        ]
+        return ChatResponse(
+            answer=generated.answer or NOT_FOUND_ANSWER,
+            grounded=groundedness == Groundedness.GROUNDED,
+            groundedness=groundedness,
+            citations=citations,
+            evidence=used_evidence,
+            claims=generated.claims,
+            retrieval_trace={
+                "query_plan": retrieval.query_plan.model_dump(),
+                "candidates": [
+                    {
+                        "chunk_id": candidate.chunk.chunk_id,
+                        "dense_score": candidate.dense_score,
+                        "sparse_score": candidate.sparse_score,
+                        "fused_score": candidate.fused_score,
+                        "rerank_score": candidate.rerank_score,
+                        "subquery_provenance": candidate.subquery_provenance,
+                    }
+                    for candidate in retrieval.candidates
+                ],
+                "parent_contexts": [
+                    parent_context.model_dump()
+                    for parent_context in retrieval.parent_contexts
+                ],
+                "trace": retrieval.trace,
+            },
+        )
+
+
 def answer_workspace_question(
     *,
     question: str,
@@ -98,109 +250,14 @@ def answer_workspace_question(
     generation_client,
     session_memory: dict[str, object] | None = None,
 ) -> ChatResponse:
-    if not chunks:
-        return ChatResponse(
-            answer=NOT_FOUND_ANSWER,
-            grounded=False,
-            groundedness=Groundedness.NOT_GROUNDED,
-            citations=[],
-        )
-
-    retrieval = RetrievalPipeline(
+    return WorkspaceRagPipeline(
         settings=settings,
-        embedding_client=embedding_client,
         chunks=chunks,
         embeddings=embeddings,
+        embedding_client=embedding_client,
+        generation_client=generation_client,
         session_memory=session_memory,
-        dense_search_provider=LangChainQdrantDenseSearchProvider(
-            path=settings.qdrant_path,
-            collection_name=f"workspace_{chunks[0].workspace_id}",
-        ),
-        sparse_search_provider=BM25SparseSearchProvider(chunks=chunks),
-    ).retrieve(question)
-
-    if not retrieval.evidence:
-        return ChatResponse(
-            answer=NOT_FOUND_ANSWER,
-            grounded=False,
-            groundedness=Groundedness.NOT_GROUNDED,
-            citations=[],
-        )
-
-    if hasattr(generation_client, "generate_answer_from_evidence"):
-        generated = generation_client.generate_answer_from_evidence(
-            question=question,
-            evidence=retrieval.evidence,
-        )
-    else:
-        generated = _deterministic_evidence_answer(question, retrieval.evidence)
-
-    evidence_by_id = {item.evidence_id: item for item in retrieval.evidence}
-    supporting_evidence_ids = [
-        evidence_id
-        for evidence_id in generated.supporting_evidence_ids
-        if evidence_id in evidence_by_id
-    ]
-    groundedness = _groundedness_from_generated(
-        generated.groundedness,
-        supporting_evidence_ids,
-        generated.claims,
-    )
-    if groundedness == Groundedness.NOT_GROUNDED:
-        return ChatResponse(
-            answer=NOT_FOUND_ANSWER,
-            grounded=False,
-            groundedness=groundedness,
-            citations=[],
-            evidence=[],
-            claims=generated.claims,
-        )
-
-    used_evidence = [evidence_by_id[evidence_id] for evidence_id in supporting_evidence_ids]
-    citations = [
-        Citation(
-            url=item.url,
-            title=item.title,
-            chunk_id=item.chunk_id,
-            score=item.rerank_score,
-            section=" > ".join(item.heading_path) if item.heading_path else None,
-            snippet=item.snippet,
-            nearby_context=item.nearby_context,
-            evidence_id=item.evidence_id,
-            parent_context_id=item.parent_context_id,
-            dense_score=item.dense_score,
-            sparse_score=item.sparse_score,
-            rerank_score=item.rerank_score,
-        )
-        for item in used_evidence
-    ]
-    return ChatResponse(
-        answer=generated.answer or NOT_FOUND_ANSWER,
-        grounded=groundedness == Groundedness.GROUNDED,
-        groundedness=groundedness,
-        citations=citations,
-        evidence=used_evidence,
-        claims=generated.claims,
-        retrieval_trace={
-            "query_plan": retrieval.query_plan.model_dump(),
-            "candidates": [
-                {
-                    "chunk_id": candidate.chunk.chunk_id,
-                    "dense_score": candidate.dense_score,
-                    "sparse_score": candidate.sparse_score,
-                    "fused_score": candidate.fused_score,
-                    "rerank_score": candidate.rerank_score,
-                    "subquery_provenance": candidate.subquery_provenance,
-                }
-                for candidate in retrieval.candidates
-            ],
-            "parent_contexts": [
-                parent_context.model_dump()
-                for parent_context in retrieval.parent_contexts
-            ],
-            "trace": retrieval.trace,
-        },
-    )
+    ).answer(question)
 
 
 def _groundedness_from_generated(

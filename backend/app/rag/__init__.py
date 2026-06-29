@@ -4,7 +4,13 @@ from app.rag.generation import (
     GoogleGenerationClient,
     LangChainGenerationClient,
 )
-from app.rag.service import ChatResponse, Citation, answer_question, answer_workspace_question
+from app.rag.service import (
+    ChatResponse,
+    Citation,
+    WorkspaceRagPipeline,
+    answer_question,
+    answer_workspace_question,
+)
 
 __all__ = [
     "ChatResponse",
@@ -13,6 +19,7 @@ __all__ = [
     "GenerationClient",
     "GoogleGenerationClient",
     "LangChainGenerationClient",
+    "WorkspaceRagPipeline",
     "answer_question",
     "answer_workspace_question",
 ]
