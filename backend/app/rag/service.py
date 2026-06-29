@@ -8,6 +8,7 @@ from app.jobs.models import IngestJob
 from app.rag.generation import GenerationClient
 from app.retrieval import RetrievalPipeline
 from app.retrieval.models import EvidenceSnippet
+from app.retrieval.service import BM25SparseSearchProvider
 from app.retrieval.vector_store import LangChainQdrantDenseSearchProvider
 from app.workspace import Groundedness
 from app.workspace.models import ChildChunkRecord
@@ -115,6 +116,7 @@ def answer_workspace_question(
             path=settings.qdrant_path,
             collection_name=f"workspace_{chunks[0].workspace_id}",
         ),
+        sparse_search_provider=BM25SparseSearchProvider(chunks=chunks),
     ).retrieve(question)
 
     if not retrieval.evidence:

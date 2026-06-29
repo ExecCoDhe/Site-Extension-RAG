@@ -3,6 +3,7 @@ import re
 from collections import defaultdict
 from typing import Protocol
 
+from langchain_core.runnables import RunnableLambda
 from langsmith import traceable
 
 from app.config import Settings
@@ -27,6 +28,62 @@ class DenseSearchProvider(Protocol):
         pass
 
 
+class SparseSearchProvider(Protocol):
+    def search_scores(self, query: str, *, limit: int) -> dict[str, float] | None:
+        pass
+
+
+class BM25SparseSearchProvider:
+    """Lexical sparse search via langchain-community BM25Retriever (rank-bm25).
+
+    Implements SparseSearchProvider: returns {chunk_id: minmax_normalized_score}
+    in [0,1], {} when no document matches, or None to signal the legacy
+    term-overlap fallback (empty corpus / ImportError / failure). Built once from
+    the active chunk corpus and reused for every subquery.
+    """
+
+    def __init__(self, *, chunks: list[ChildChunkRecord]) -> None:
+        self._chunk_ids = [chunk.chunk_id for chunk in chunks]
+        self._retriever = None
+        if not chunks:
+            return
+        try:
+            from langchain_community.retrievers import BM25Retriever
+            from langchain_core.documents import Document
+        except ImportError:
+            return
+        documents = [
+            Document(
+                page_content=f"{chunk.text} {' '.join(chunk.heading_path)} {chunk.title}",
+                metadata={"chunk_id": chunk.chunk_id},
+            )
+            for chunk in chunks
+        ]
+        try:
+            self._retriever = BM25Retriever.from_documents(documents, preprocess_func=_terms)
+        except Exception:
+            self._retriever = None
+
+    def search_scores(self, query: str, *, limit: int) -> dict[str, float] | None:
+        if self._retriever is None:
+            return None
+        try:
+            raw = self._retriever.vectorizer.get_scores(_terms(query))
+        except Exception:
+            return None
+        values = [float(score) for score in raw]
+        if not values:
+            return {}
+        lowest, highest = min(values), max(values)
+        span = highest - lowest
+        scores: dict[str, float] = {}
+        for chunk_id, value in zip(self._chunk_ids, values, strict=True):
+            normalized = (value - lowest) / span if span > 0 else (1.0 if highest > 0 else 0.0)
+            if normalized > 0:
+                scores[chunk_id] = normalized
+        return scores
+
+
 class RetrievalPipeline:
     def __init__(
         self,
@@ -37,6 +94,7 @@ class RetrievalPipeline:
         embeddings: dict[str, list[float]],
         session_memory: dict[str, object] | None = None,
         dense_search_provider: DenseSearchProvider | None = None,
+        sparse_search_provider: SparseSearchProvider | None = None,
     ) -> None:
         self._settings = settings
         self._embedding_client = embedding_client
@@ -44,12 +102,24 @@ class RetrievalPipeline:
         self._embeddings = embeddings
         self._session_memory = session_memory or {}
         self._dense_search_provider = dense_search_provider
+        self._sparse_search_provider = sparse_search_provider
 
     @traceable(name="retrieval_pipeline")
     def retrieve(self, question: str) -> RetrievalResult:
-        query_plan = self._query_plan(question)
-        candidates_by_id: dict[str, RetrievalCandidate] = {}
+        chain = (
+            RunnableLambda(self._plan_step).with_config(run_name="query_plan")
+            | RunnableLambda(self._gather_candidates_step).with_config(run_name="gather_candidates")
+            | RunnableLambda(self._rerank_step).with_config(run_name="rerank")
+            | RunnableLambda(self._assemble_step).with_config(run_name="assemble_evidence")
+        )
+        return chain.invoke(question)
 
+    def _plan_step(self, question: str) -> dict:
+        return {"question": question, "query_plan": self._query_plan(question)}
+
+    def _gather_candidates_step(self, state: dict) -> dict:
+        query_plan = state["query_plan"]
+        candidates_by_id: dict[str, RetrievalCandidate] = {}
         for subquery in query_plan.subqueries:
             subquery_embedding = self._embedding_client.embed_query(subquery)
             candidates = self._retrieve_subquery(subquery, subquery_embedding)
@@ -66,10 +136,21 @@ class RetrievalPipeline:
                     existing.sparse_score = max(existing.sparse_score, candidate.sparse_score)
                     if subquery not in existing.subquery_provenance:
                         existing.subquery_provenance.append(subquery)
+        state["candidates_by_id"] = candidates_by_id
+        state["all_candidates"] = list(candidates_by_id.values())
+        state["deduped"] = _dedupe_semantic_overlap(state["all_candidates"])
+        return state
 
-        all_candidates = list(candidates_by_id.values())
-        deduped = _dedupe_semantic_overlap(all_candidates)
-        reranked = self._rerank(query_plan.rewritten_question, deduped)
+    def _rerank_step(self, state: dict) -> dict:
+        state["reranked"] = self._rerank(state["query_plan"].rewritten_question, state["deduped"])
+        return state
+
+    def _assemble_step(self, state: dict) -> RetrievalResult:
+        query_plan = state["query_plan"]
+        candidates_by_id = state["candidates_by_id"]
+        all_candidates = state["all_candidates"]
+        deduped = state["deduped"]
+        reranked = state["reranked"]
         parent_contexts = _assemble_parent_contexts(
             reranked=reranked,
             all_candidates=all_candidates,
@@ -150,6 +231,14 @@ class RetrievalPipeline:
             if self._dense_search_provider
             else None
         )
+        sparse_scores = (
+            self._sparse_search_provider.search_scores(
+                subquery,
+                limit=self._settings.retrieval_candidate_limit,
+            )
+            if self._sparse_search_provider
+            else None
+        )
         for chunk in self._chunks:
             embedding = self._embeddings.get(chunk.chunk_id)
             dense_score = (
@@ -157,8 +246,11 @@ class RetrievalPipeline:
                 if provider_scores is not None
                 else _cosine(query_embedding, embedding) if embedding is not None else 0.0
             )
-            chunk_terms = set(_terms(chunk.text + " " + " ".join(chunk.heading_path) + " " + chunk.title))
-            sparse_score = len(query_terms & chunk_terms) / max(len(query_terms), 1)
+            if sparse_scores is not None:
+                sparse_score = sparse_scores.get(chunk.chunk_id, 0.0)
+            else:
+                chunk_terms = set(_terms(chunk.text + " " + " ".join(chunk.heading_path) + " " + chunk.title))
+                sparse_score = len(query_terms & chunk_terms) / max(len(query_terms), 1)
             if dense_score <= 0 and sparse_score <= 0:
                 continue
             candidates.append(

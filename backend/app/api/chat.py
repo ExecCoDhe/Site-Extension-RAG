@@ -40,7 +40,9 @@ def chat(request: ChatRequest) -> dict[str, object]:
             question=request.question,
             settings=settings,
             chunks=workspace_store.active_chunks(),
-            embeddings=workspace_store.embeddings(settings.gemini_embedding_model),
+            embeddings=workspace_store.embeddings(
+                workspace.active_embedding_version or settings.gemini_embedding_model
+            ),
             embedding_client=LangChainEmbeddingClient(
                 api_key=settings.gemini_api_key,
                 model=settings.gemini_embedding_model,

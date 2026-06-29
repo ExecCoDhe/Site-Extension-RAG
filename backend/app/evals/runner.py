@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 from app.config import Settings
 from app.index.embeddings import EmbeddingClient
 from app.retrieval import RetrievalPipeline
+from app.retrieval.service import BM25SparseSearchProvider
 from app.workspace.models import ChildChunkRecord
 
 
@@ -13,7 +14,6 @@ class EvalCase(BaseModel):
     expected_urls: list[str] = Field(default_factory=list)
     should_decompose: bool = False
     expected_groundedness: str | None = None
-    expected_answer: str | None = None
 
 
 class EvalResult(BaseModel):
@@ -39,12 +39,14 @@ def run_retrieval_eval(
     embeddings: dict[str, list[float]],
 ) -> dict[str, object]:
     results: list[EvalResult] = []
+    sparse_provider = BM25SparseSearchProvider(chunks=chunks)
     for case in cases:
         retrieval = RetrievalPipeline(
             settings=settings,
             embedding_client=embedding_client,
             chunks=chunks,
             embeddings=embeddings,
+            sparse_search_provider=sparse_provider,
         ).retrieve(case.question)
         retrieved_chunk_ids = [item.chunk_id for item in retrieval.evidence]
         retrieved_urls = [item.url for item in retrieval.evidence]
