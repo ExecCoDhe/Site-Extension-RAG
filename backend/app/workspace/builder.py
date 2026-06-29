@@ -1,7 +1,7 @@
 
 from app.chunking import build_hierarchical_chunks
 from app.config import Settings
-from app.jobs.models import PageRecord
+from app.crawl.models import PageRecord
 from app.workspace.models import AcquisitionMethod, PageVersionRecord
 
 

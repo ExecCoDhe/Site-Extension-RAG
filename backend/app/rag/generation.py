@@ -2,13 +2,11 @@ import json
 from html import escape
 from typing import Protocol
 
-from google import genai
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langsmith import traceable
 from pydantic import BaseModel, ValidationError
 
 from app.index.embeddings import MissingGoogleConfiguration
-from app.index.vector_index import SearchHit
 from app.retrieval.models import EvidenceSnippet
 
 NOT_FOUND_ANSWER = "The indexed site content does not contain enough information to answer that."
@@ -23,11 +21,6 @@ class GeneratedAnswer(BaseModel):
     groundedness: str = "not_grounded"
     claims: list[dict[str, object]] = []
     supporting_evidence_ids: list[str] = []
-
-
-class GenerationClient(Protocol):
-    def generate_answer(self, *, question: str, hits: list[SearchHit]) -> GeneratedAnswer:
-        pass
 
 
 class EvidenceGenerationClient(Protocol):
@@ -46,62 +39,6 @@ class RawGenerationClient(Protocol):
 
 
 DEFAULT_TIMEOUT_SECONDS = 60
-
-
-class GoogleGenerationClient:
-    def __init__(self, *, api_key: str | None, model: str, timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS) -> None:
-        if not api_key:
-            raise MissingGoogleConfiguration("GEMINI_API_KEY is not configured.")
-
-        self._model = model
-        self._client = genai.Client(
-            api_key=api_key,
-            http_options={"timeout": timeout_seconds * 1000},
-        )
-
-    def generate_raw(self, prompt: str) -> str:
-        """Send a raw prompt and return the text response."""
-        response = self._client.models.generate_content(
-            model=self._model,
-            contents=prompt,
-        )
-        return response.text or ""
-
-    @traceable(name="generate_answer")
-    def generate_answer(self, *, question: str, hits: list[SearchHit]) -> GeneratedAnswer:
-        try:
-            response = self._client.models.generate_content(
-                model=self._model,
-                contents=_build_prompt(question=question, hits=hits),
-            )
-            payload = _parse_json_object(response.text or "{}")
-        except Exception as error:
-            raise MissingGoogleConfiguration("Google chat configuration is unusable.") from error
-
-        return GeneratedAnswer(
-            answer=str(payload.get("answer", "")),
-            reasoning=str(payload.get("reasoning", "")),
-            grounded=bool(payload.get("grounded", False)),
-            supporting_chunk_ids=[str(item) for item in payload.get("supporting_chunk_ids", [])],
-        )
-
-    @traceable(name="generate_answer_from_evidence")
-    def generate_answer_from_evidence(
-        self,
-        *,
-        question: str,
-        evidence: list[EvidenceSnippet],
-    ) -> GeneratedAnswer:
-        try:
-            response = self._client.models.generate_content(
-                model=self._model,
-                contents=_build_evidence_prompt(question=question, evidence=evidence),
-            )
-            payload = _parse_json_object(response.text or "{}")
-        except Exception as error:
-            raise MissingGoogleConfiguration("Google chat configuration is unusable.") from error
-
-        return _answer_from_evidence_payload(payload, evidence)
 
 
 class _ClaimSchema(BaseModel):
@@ -162,21 +99,6 @@ class LangChainGenerationClient:
     def generate_raw(self, prompt: str) -> str:
         return _message_text(self._chat.invoke(prompt))
 
-    @traceable(name="generate_answer")
-    def generate_answer(self, *, question: str, hits: list[SearchHit]) -> GeneratedAnswer:
-        prompt = _build_prompt(question=question, hits=hits)
-        try:
-            payload = _parse_json_object(self.generate_raw(prompt))
-        except Exception as error:
-            raise MissingGoogleConfiguration("Google chat configuration is unusable.") from error
-
-        return GeneratedAnswer(
-            answer=str(payload.get("answer", "")),
-            reasoning=str(payload.get("reasoning", "")),
-            grounded=bool(payload.get("grounded", False)),
-            supporting_chunk_ids=[str(item) for item in payload.get("supporting_chunk_ids", [])],
-        )
-
     @traceable(name="generate_answer_from_evidence")
     def generate_answer_from_evidence(
         self,
@@ -200,34 +122,6 @@ class LangChainGenerationClient:
         except (ValidationError, TypeError, ValueError):
             pass
         return _parse_json_object(self.generate_raw(prompt))
-
-
-def _build_prompt(*, question: str, hits: list[SearchHit]) -> str:
-    chunk_blocks = "\n".join(
-        f'<chunk id="{escape(hit.chunk.chunk_id)}">\n'
-        f"  <title>{escape(hit.chunk.title)}</title>\n"
-        f"  <url>{escape(hit.chunk.url)}</url>\n"
-        f"  <text>{escape(hit.chunk.text)}</text>\n"
-        f"</chunk>"
-        for hit in hits
-    )
-    return (
-        "You are a grounded answering system. "
-        "Answer the question using ONLY the provided chunks.\n\n"
-        "<instructions>\n"
-        "1. Analyze each chunk for relevance to the question.\n"
-        "2. Reason step-by-step about which chunks support the answer.\n"
-        "3. If the chunks do not support an answer, say the indexed site "
-        "content does not contain enough information.\n"
-        "</instructions>\n\n"
-        f"<question>{escape(question)}</question>\n\n"
-        f"<chunks>\n{chunk_blocks}\n</chunks>\n\n"
-        "Return ONLY a JSON object with these keys:\n"
-        '- "reasoning": Your step-by-step analysis (string)\n'
-        '- "answer": The final answer based only on the chunks (string)\n'
-        '- "grounded": true if the answer is fully supported (boolean)\n'
-        '- "supporting_chunk_ids": Array of chunk IDs that support the answer'
-    )
 
 
 def _build_evidence_prompt(*, question: str, evidence: list[EvidenceSnippet]) -> str:

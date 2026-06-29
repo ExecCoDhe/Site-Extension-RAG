@@ -72,44 +72,6 @@ class QdrantVectorStore:
             client.close()
 
 
-class QdrantDenseSearchProvider:
-    def __init__(self, *, path: str, collection_name: str) -> None:
-        self.path = path
-        self.collection_name = collection_name
-
-    def search_scores(
-        self,
-        query_embedding: list[float],
-        *,
-        limit: int,
-    ) -> dict[str, float] | None:
-        try:
-            from qdrant_client import QdrantClient
-        except ImportError:
-            return None
-
-        try:
-            client = QdrantClient(path=self.path)
-            if not client.collection_exists(self.collection_name):
-                return None
-            points = _query_points(
-                client=client,
-                collection_name=self.collection_name,
-                query_embedding=query_embedding,
-                limit=limit,
-            )
-        except Exception:
-            return None
-
-        scores: dict[str, float] = {}
-        for point in points:
-            payload = getattr(point, "payload", None) or {}
-            chunk_id = payload.get("chunk_id")
-            if chunk_id:
-                scores[str(chunk_id)] = float(getattr(point, "score", 0.0))
-        return scores
-
-
 class LangChainQdrantDenseSearchProvider:
     """Dense search via langchain-qdrant QdrantVectorStore (reads only).
 
@@ -168,26 +130,3 @@ class LangChainQdrantDenseSearchProvider:
         finally:
             if client is not None:
                 client.close()
-
-
-def _query_points(
-    *,
-    client,
-    collection_name: str,
-    query_embedding: list[float],
-    limit: int,
-):
-    if hasattr(client, "query_points"):
-        result = client.query_points(
-            collection_name=collection_name,
-            query=query_embedding,
-            limit=limit,
-            with_payload=True,
-        )
-        return getattr(result, "points", result)
-    return client.search(
-        collection_name=collection_name,
-        query_vector=query_embedding,
-        limit=limit,
-        with_payload=True,
-    )

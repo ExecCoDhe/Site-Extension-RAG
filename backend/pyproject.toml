@@ -12,14 +12,11 @@ requires-python = ">=3.11"
 authors = [{ name = "Dhedhanved Aggarwall" }]
 dependencies = [
     "beautifulsoup4",
-    "faiss-cpu",
     "fastapi[standard]",
-    "google-genai",
     "httpx",
     "langsmith",
     "lxml",
     "lxml_html_clean",
-    "numpy",
     "pydantic-settings",
     "psycopg[binary]",
     "psycopg-pool",

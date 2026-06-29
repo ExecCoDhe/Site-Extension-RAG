@@ -1,7 +1,6 @@
 from fastapi.testclient import TestClient
 
-from app.jobs import job_manager
-from app.jobs.models import PageRecord
+from app.crawl.models import PageRecord
 from app.main import app
 from app.workspace import workspace_store
 from app.workspace.models import RunState
@@ -134,7 +133,7 @@ def test_private_seed_url_is_rejected(monkeypatch) -> None:
     response = client.post("/ingest", json={"url": "http://127.0.0.1:9999"})
 
     assert response.status_code == 422
-    assert job_manager.active_ingest_job() is None
+    assert workspace_store.active_ingest_run() is None
 
 
 def test_run_ingest_embeds_persisted_child_chunks(monkeypatch) -> None:

@@ -9,8 +9,6 @@ from app.index.embeddings import (
     LangChainEmbeddingClient,
     MissingGoogleConfiguration,
 )
-from app.index.vector_index import SearchHit
-from app.jobs.models import ChunkRecord
 from app.rag.generation import (
     NOT_FOUND_ANSWER,
     GeneratedAnswerSchema,
@@ -374,31 +372,6 @@ def test_langchain_generation_client_structured_transport_error_skips_raw(
         )
 
     assert fake_chat.raw_prompts == []
-
-
-def test_langchain_generation_client_generate_answer(fake_chat: FakeChatModel) -> None:
-    fake_chat.raw_result = json.dumps(
-        {
-            "answer": "Alpha is described in the indexed page.",
-            "reasoning": "Chunk supports alpha.",
-            "grounded": True,
-            "supporting_chunk_ids": ["chunk_1"],
-        }
-    )
-    chunk = ChunkRecord(
-        chunk_id="chunk_1",
-        url="https://example.com/a",
-        title="A",
-        text="alpha content",
-    )
-    client = LangChainGenerationClient(api_key="fake-key", model="gemini-2.0-flash")
-    answer = client.generate_answer(
-        question="What is alpha?",
-        hits=[SearchHit(chunk=chunk, score=1.0)],
-    )
-
-    assert answer.grounded is True
-    assert answer.supporting_chunk_ids == ["chunk_1"]
 
 
 def test_langchain_generation_client_raw_failure_raises_missing_configuration(

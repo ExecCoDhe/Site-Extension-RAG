@@ -1,30 +1,7 @@
 from uuid import NAMESPACE_URL, uuid5
 
-from app.jobs.models import ChunkRecord, PageRecord
+from app.crawl.models import PageRecord
 from app.workspace.models import ChildChunkRecord, ParentSectionRecord
-
-
-def chunk_pages(
-    job_id: str,
-    pages: list[PageRecord],
-    *,
-    chunk_size: int,
-    chunk_overlap: int,
-) -> list[ChunkRecord]:
-    chunks: list[ChunkRecord] = []
-
-    for page_index, page in enumerate(pages):
-        for text_index, text in enumerate(_window_text(page.clean_text, chunk_size, chunk_overlap)):
-            chunks.append(
-                ChunkRecord(
-                    chunk_id=f"{job_id}:{page_index:04d}:{text_index:04d}",
-                    url=page.url,
-                    title=page.title,
-                    text=text,
-                )
-            )
-
-    return chunks
 
 
 def build_hierarchical_chunks(
@@ -80,28 +57,6 @@ def build_hierarchical_chunks(
             offset = end_offset + 1
 
     return sections, chunks
-
-
-def _window_text(text: str, chunk_size: int, chunk_overlap: int) -> list[str]:
-    normalized = " ".join(text.split())
-    if not normalized:
-        return []
-    if len(normalized) <= chunk_size:
-        return [normalized]
-
-    step = max(1, chunk_size - chunk_overlap)
-    windows: list[str] = []
-    start = 0
-
-    while start < len(normalized):
-        window = normalized[start : start + chunk_size].strip()
-        if window:
-            windows.append(window)
-        if start + chunk_size >= len(normalized):
-            break
-        start += step
-
-    return windows
 
 
 def _section_texts(page: PageRecord) -> list[tuple[list[str], str]]:

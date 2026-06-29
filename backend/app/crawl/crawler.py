@@ -6,9 +6,9 @@ from xml.etree import ElementTree
 import httpx
 from pydantic import BaseModel, Field
 
+from app.crawl.models import PageRecord
 from app.crawl.security import is_public_http_url, same_registrable_domain, same_site
 from app.extract.html import extract_page
-from app.jobs.models import PageRecord
 
 
 class CrawlResult(BaseModel):

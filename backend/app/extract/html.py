@@ -5,7 +5,7 @@ import trafilatura
 from bs4 import BeautifulSoup
 from pydantic import BaseModel
 
-from app.jobs.models import PageRecord
+from app.crawl.models import PageRecord
 
 
 class ExtractedPage(BaseModel):

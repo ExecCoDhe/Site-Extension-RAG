@@ -4,9 +4,6 @@ from pydantic import BaseModel
 
 from app.config import Settings
 from app.index.embeddings import EmbeddingClient
-from app.index.vector_index import VectorIndex
-from app.jobs.models import IngestJob
-from app.rag.generation import GenerationClient
 from app.retrieval import RetrievalPipeline
 from app.retrieval.models import EvidenceSnippet
 from app.retrieval.service import BM25SparseSearchProvider
@@ -42,50 +39,6 @@ class ChatResponse(BaseModel):
     trace_id: str | None = None
     langsmith_run_id: str | None = None
     retrieval_trace: dict[str, object] = {}
-
-
-def answer_question(
-    *,
-    job: IngestJob,
-    question: str,
-    settings: Settings,
-    embedding_client: EmbeddingClient,
-    generation_client: GenerationClient,
-) -> ChatResponse:
-    vector_index = job.vector_index
-    if not isinstance(vector_index, VectorIndex):
-        return ChatResponse(answer=NOT_FOUND_ANSWER, grounded=False, citations=[])
-
-    query_embedding = embedding_client.embed_query(question)
-    hits = vector_index.search(query_embedding, top_k=settings.top_k)
-    if not hits:
-        return ChatResponse(answer=NOT_FOUND_ANSWER, grounded=False, citations=[])
-
-    generated = generation_client.generate_answer(question=question, hits=hits)
-    hits_by_chunk_id = {hit.chunk.chunk_id: hit for hit in hits}
-    supporting_ids = [
-        chunk_id for chunk_id in generated.supporting_chunk_ids if chunk_id in hits_by_chunk_id
-    ]
-
-    if not generated.grounded or not supporting_ids:
-        return ChatResponse(answer=NOT_FOUND_ANSWER, grounded=False, citations=[])
-
-    citations = [
-        Citation(
-            url=hits_by_chunk_id[chunk_id].chunk.url,
-            title=hits_by_chunk_id[chunk_id].chunk.title,
-            chunk_id=chunk_id,
-            score=hits_by_chunk_id[chunk_id].score,
-        )
-        for chunk_id in supporting_ids
-    ]
-
-    return ChatResponse(
-        answer=generated.answer,
-        grounded=True,
-        groundedness=Groundedness.GROUNDED,
-        citations=citations,
-    )
 
 
 class WorkspaceRagPipeline:
