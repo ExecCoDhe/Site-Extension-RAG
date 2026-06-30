@@ -20,6 +20,11 @@ EVAL_SETTINGS_OVERRIDES: dict[str, int] = {
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
 DATASETS_DIR = Path(__file__).resolve().parent / "datasets"
 
+RETRIEVAL_DATASET_NAME = "aura-retrieval-golden"
+QA_DATASET_NAME = "aura-qa-golden"
+EXPERIMENT_PREFIX = "aura-rag"
+SITES = ["acme_docs", "nimbus_api", "orchard_co"]
+
 
 def eval_settings(
     *,
